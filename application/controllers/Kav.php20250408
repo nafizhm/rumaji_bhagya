@@ -1,0 +1,618 @@
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+
+
+
+class Kav extends CI_Controller
+{
+
+
+
+	/**
+
+	 * Index Page for this controller.
+
+	 *
+
+	 * Maps to the following URL
+
+	 * 		http://example.com/index.php/welcome
+
+	 *	- or -
+
+	 * 		http://example.com/index.php/welcome/index
+
+	 *	- or -
+
+	 * Since this controller is set as the default controller in
+
+	 * config/routes.php, it's displayed at http://example.com/
+
+	 *
+
+	 * So any other public methods not prefixed with an underscore will
+
+	 * map to /index.php/welcome/<method_name>
+
+	 * @see https://codeigniter.com/user_guide/general/urls.html
+
+	 */
+
+
+
+	/* Insialiasi otorisasi */
+
+	var $moid = 'PJ';
+
+	var $mid = 'M002';
+
+
+
+	function __construct()
+
+	{
+
+		parent::__construct();
+
+		$this->lib->check_login();
+
+		$this->load->model('mod_kav', '', TRUE);
+
+		$this->load->model('mod_proj', '', TRUE);
+
+		$this->load->model('mod_admin', '', TRUE);
+	}
+
+
+
+	function prog_bgn()
+
+	{
+
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'R');
+
+
+
+		$list_proj = $this->mod_proj->list_proj()->result();
+
+		$data['form_action'] = site_url('kav/prog_bgn_disp');
+
+		$data['proj'] = $this->lib->generate_cb_proj($this->input->post('cb_proj'));
+
+		$data['main_title'] = 'Update Progress Bangun';
+
+		$data['title'] = 'Pilih Project';
+
+		$this->load->view('frm_pick_proj_bgn', $data);
+	}
+
+
+
+	function prog_bgn_disp()
+
+	{
+
+		$projid = '';
+
+		if ($this->input->post('cb_proj') == '') {
+
+			$projid = $this->uri->segment(3);
+		} else {
+
+			$projid = $this->input->post('cb_proj');
+		}
+
+
+
+		$lot = '';
+
+		if ($this->input->post('txt_lot') == '') {
+
+			$lot = $this->uri->segment(4);
+		} else {
+
+			$lot = $this->input->post('txt_lot');
+		}
+
+
+
+		$data['form_action'] = site_url('kav/prog_bgn_upd/' . $projid . '/' . $lot);
+
+		$list_kav = $this->mod_kav->list_kav_bylot($projid, $lot);
+
+		$data['list_kav'] = $list_kav;
+
+		foreach ($this->mod_proj->edit_proj($projid)->result() as $row_proj);
+
+
+
+		$data['title'] = $row_proj->namproj . ' Lot ' . $lot;
+
+		$this->load->view('list_prog_bgn', $data);
+	}
+
+
+
+	function prog_bgn_upd()
+
+	{
+
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'U');
+
+		//echo $this->input->post('txt_count');
+
+		$rowcount = $this->input->post('txt_count');
+
+		for ($i = 0; $i < $rowcount; $i++) {
+
+			if ($_POST['txt_pkav'][$i] != $_POST['txt_pkav_old'][$i]) {
+
+				$kav = array(
+
+					'pkav' => $_POST['txt_pkav'][$i],
+
+					'chby' => $this->session->userdata('userid'),
+
+					'chdat' => date('Y-m-d')
+
+				);
+
+				$this->mod_kav->update_kav($_POST['txt_projid'][$i], $_POST['txt_blok'][$i], $_POST['txt_no'][$i], $kav);
+			}
+		}
+
+
+
+		$this->session->set_flashdata('ok', 'Data progress bangun sudah diupdate');
+
+		redirect('kav/prog_bgn_disp/' . $this->uri->segment(3) . '/' . $this->uri->segment(4));
+	}
+
+
+
+	public function index()
+
+	{
+
+		$this->pick_proj();
+	}
+
+
+
+	function pick_proj()
+
+	{
+
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'R');
+
+
+
+		$list_proj = $this->mod_proj->list_proj()->result();
+
+		$data['form_action'] = site_url('kav/do_search_kav');
+
+		$data['proj'] = $this->lib->generate_cb_proj($this->input->post('cb_proj'));
+
+		$data['main_title'] = 'List Stok Kavling';
+
+		$data['title'] = 'Pilih Project';
+
+		$this->load->view('frm_pick_proj', $data);
+	}
+
+
+
+	function do_search_kav()
+
+	{
+
+		$projid = '';
+
+		if ($this->input->post('cb_proj') == '') {
+
+			$projid = $this->uri->segment(3);
+		} else {
+
+			$projid = $this->input->post('cb_proj');
+		}
+
+
+
+
+
+		$list_kav = $this->mod_kav->list_kav($projid)->result();
+
+		$data['list_kav'] = $list_kav;
+
+		foreach ($this->mod_proj->edit_proj($projid)->result() as $row_proj);
+
+
+
+		$data['title'] = $row_proj->namproj;
+
+		$this->load->view('list_kav', $data);
+	}
+
+
+
+	function input_kav()
+
+	{
+
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'C');
+
+
+
+		$data['form_action'] = site_url('kav/do_input_kav');
+
+		$data['url_back'] = site_url('kav');
+
+		$data['title'] = 'Tambah Stok Kavling';
+
+		$data['readonly'] = '';
+
+
+
+		$data['proj'] = $this->lib->generate_cb_proj($this->input->post('cb_proj'));
+
+		$data['tipe'] = $this->lib->generate_cb_tipe($this->input->post('cb_tipe'));
+
+
+
+
+
+		$this->load->view('frm_kav', $data);
+	}
+
+
+
+	function do_input_kav()
+
+	{
+
+
+
+
+
+		$kav = array(
+
+			'projid' => $this->input->post('cb_proj'),
+
+			'blok' => strtoupper($this->input->post('txt_blok')),
+
+			'no' => strtoupper($this->input->post('txt_no')),
+
+			'lot' => strtoupper(trim($this->input->post('txt_lot'))),
+
+			'ltstd' => $this->input->post('txt_lt_std'),
+
+			'tipe' => $this->input->post('cb_tipe'),
+
+			'pkav' => $this->input->post('txt_pkav'),
+
+			'tahun' => $this->input->post('txt_tahun'),
+
+			'status' => 'BLA',
+
+			'crby' => $this->session->userdata('userid'),
+
+			'crdat' => date('Y-m-d')
+
+		);
+
+		$this->mod_kav->input_kav($kav);
+
+
+
+		$kavlog = array(
+
+			'projid' => $this->input->post('cb_proj'),
+
+			'blok' => strtoupper($this->input->post('txt_blok')),
+
+			'no' => strtoupper($this->input->post('txt_no')),
+
+			'status' => 'BLA',
+
+			'ket' => 'SISTEM',
+
+			'crby' => $this->session->userdata('userid'),
+
+			'crdat' => date('Y-m-d'),
+
+			'crtim' => $this->lib->get_time()
+
+		);
+
+		$this->mod_kav->input_kavlog($kavlog);
+
+
+
+		if ($this->input->post('ch_ft') != '') {
+
+			foreach ($this->input->post('ch_ft') as $ftid) {
+
+				if ($ftid != 'TLE') {
+
+					$ltnh = 0;
+				} else {
+
+					$ltnh = $this->input->post('txt_lt_lbh');
+				}
+
+
+
+				$ft[] = array(
+
+					'projid' => $this->input->post('cb_proj'),
+
+					'blok' => strtoupper($this->input->post('txt_blok')),
+
+					'no' => strtoupper($this->input->post('txt_no')),
+
+					'ftid' => $ftid,
+
+					'ltnh' => $ltnh,
+
+				);
+			}
+
+
+
+
+
+			$this->mod_kav->input_kavf($ft);
+		}
+
+
+
+		$this->session->set_flashdata('ok', 'Tambah stok kavling berhasil');
+
+		redirect('kav/input_kav');
+	}
+
+
+
+
+
+
+
+	function edit_kav()
+
+	{
+
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'R');
+
+
+
+		$data['form_action'] = site_url('kav/do_edit_kav');
+
+		$data['readonly'] = '';
+
+		$data['title'] = 'List Stok Kavling > Ubah Data';
+
+		$data['url_back'] = site_url('kav/do_search_kav/' . $this->uri->segment(3));
+
+		$sql_get_kav = $this->mod_kav->edit_kav($this->uri->segment(3), $this->uri->segment(4), $this->uri->segment(5));
+
+		foreach ($sql_get_kav->result()  as $row);
+
+
+
+		$data['proj'] = $this->lib->generate_cb_proj($row->projid);
+
+		$data['tipe'] = $this->lib->generate_cb_tipe($row->tipe);
+
+		$data['default']['txt_proj'] = $row->projid;
+
+		$data['default']['txt_lot'] = $row->lot;
+
+		$data['default']['txt_blok'] = $row->blok;
+
+		$data['default']['txt_no'] = $row->no;
+
+		$data['default']['txt_lt_std'] = $row->ltstd;
+
+		$data['default']['txt_status'] = $row->status;
+
+		$data['default']['txt_pkav'] = $row->pkav;
+
+		$data['default']['txt_tahun'] = $row->tahun;
+
+
+
+
+		$query_fit = $this->mod_kav->list_kavf($row->projid, $row->blok, $row->no);
+
+		foreach ($query_fit->result()  as $row_fit) {
+
+
+
+			switch ($row_fit->ftid) {
+
+				case 'BLV':
+
+					$data['default']['blv'] = $row_fit->ftid;
+
+					break;
+
+				case 'HOK':
+
+					$data['default']['hok'] = $row_fit->ftid;
+
+					break;
+
+				case 'TLE':
+
+					$data['default']['tle'] = $row_fit->ftid;
+
+					$data['default']['txt_lt_lbh'] =  $row_fit->ltnh;
+
+					break;
+			}
+		}
+
+
+
+		$data['status'] = $this->lib->get_status_text('KAV', $row->status);
+
+
+
+		$data['list_kavlog'] = $this->mod_kav->list_kavlog($this->uri->segment(3), $this->uri->segment(4), $this->uri->segment(5))->result();
+
+
+
+		$this->load->view('frm_kav', $data);
+	}
+
+
+
+	function do_edit_kav()
+
+	{
+
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'U');
+
+
+
+		if ($this->input->post('txt_status') == 'BLA' || $this->input->post('txt_status') == 'BTL') {
+
+			$kav = array(
+
+				'projid' => $this->input->post('cb_proj'),
+
+				'blok' => strtoupper($this->input->post('txt_blok')),
+
+				'no' => strtoupper($this->input->post('txt_no')),
+
+				'lot' => strtoupper(trim($this->input->post('txt_lot'))),
+
+				'ltstd' => $this->input->post('txt_lt_std'),
+
+				'tipe' => $this->input->post('cb_tipe'),
+
+				'pkav' => $this->input->post('txt_pkav'),
+
+				'tahun' => $this->input->post('txt_tahun'),
+
+				'chby' => $this->session->userdata('userid'),
+
+				'chdat' => date('Y-m-d')
+
+			);
+
+
+
+
+
+			$this->mod_kav->update_kav($this->input->post('txt_proj'), $this->input->post('txt_blok_old'), $this->input->post('txt_no_old'), $kav);
+
+
+
+			if ($this->input->post('ch_ft') != '') {
+
+				$this->mod_kav->delete_kavf($this->input->post('txt_proj'), $this->input->post('txt_blok_old'), $this->input->post('txt_no_old'));
+
+				foreach ($this->input->post('ch_ft') as $ftid) {
+
+					if ($ftid != 'TLE') {
+
+						$ltnh = 0;
+					} else {
+
+						$ltnh = $this->input->post('txt_lt_lbh');
+					}
+
+
+
+					$ft[] = array(
+
+						'projid' => $this->input->post('txt_proj'),
+
+						'blok' => strtoupper($this->input->post('txt_blok')),
+
+						'no' => strtoupper($this->input->post('txt_no')),
+
+						'ftid' => $ftid,
+
+						'ltnh' => $ltnh,
+
+					);
+				}
+
+				$this->mod_kav->input_kavf($ft);
+			} else {
+				$this->mod_kav->delete_kavf($this->input->post('txt_proj'), $this->input->post('txt_blok_old'), $this->input->post('txt_no_old'));
+			}
+
+
+
+			$this->session->set_flashdata('ok', 'Data stok kavling telah diubah');
+
+			redirect('kav/edit_kav/' . $this->input->post('txt_proj') . '/' . strtoupper($this->input->post('txt_blok')) . '/' . strtoupper($this->input->post('txt_no')));
+		} else {
+
+			if ($this->input->post('txt_pkav') <> $this->input->post('txt_pkav_old') || $this->input->post('txt_tahun') != '0000') {
+
+				$kav = array(
+
+					'pkav' => $this->input->post('txt_pkav'),
+					'tahun' => $this->input->post('txt_tahun'),
+					'chby' => $this->session->userdata('userid'),
+
+					'chdat' => date('Y-m-d')
+
+				);
+
+
+
+				$this->mod_kav->update_kav($this->input->post('txt_proj'), $this->input->post('txt_blok_old'), $this->input->post('txt_no_old'), $kav);
+
+
+
+				$this->session->set_flashdata('ok', 'Data kavling sudah diubah');
+			} else {
+
+				$this->session->set_flashdata('error', 'Data tidak bisa di ubah karena status <> belum laku!');
+			}
+
+			redirect('kav/edit_kav/' . $this->input->post('txt_proj') . '/' . $this->input->post('txt_blok_old') . '/' . $this->input->post('txt_no_old'));
+		}
+	}
+
+
+
+	function delete_kav()
+
+	{
+
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'D');
+
+
+
+		$sql_get_kav = $this->mod_kav->edit_kav($this->uri->segment(3), $this->uri->segment(4), $this->uri->segment(5));
+
+		foreach ($sql_get_kav->result()  as $row);
+
+
+
+		if ($row->status != 'BLA') {
+
+			$this->session->set_flashdata('error', 'Data tidak bisa di hapus karena status <> belum laku!');
+
+			redirect('kav/do_search_kav/' . $this->uri->segment(3));
+		} else {
+
+			$this->mod_kav->delete_kav($this->uri->segment(3), $this->uri->segment(4), $this->uri->segment(5));
+
+			$this->mod_kav->delete_kavlog($this->uri->segment(3), $this->uri->segment(4), $this->uri->segment(5));
+
+
+
+			$this->session->set_flashdata('ok', 'Data stok kavling sudah di hapus');
+
+			redirect('kav/do_search_kav/' . $this->uri->segment(3));
+		}
+	}
+}

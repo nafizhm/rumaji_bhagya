@@ -1,0 +1,9 @@
+RewriteEngine On
+RewriteBase /rumaji/
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php/$1 [L]
+SetEnv CI_ENV "production"
+SetEnv DB_ONLINE "db_test"
+SetEnv TGL_VER "2020-04-20"

@@ -1,0 +1,1747 @@
+<?php $this->load->view('header'); ?>
+<link href="<?php echo $this->config->item('assets');?>/bootstrap-select-1.12.3/css/bootstrap-select.min.css" rel="stylesheet">
+        <!-- page content -->
+        <div class="right_col" role="main">
+          <div class="">
+            <div class="page-title">
+              <div class="title_left">
+                <h3>Detail SPR</h3>
+              </div>
+            </div>
+            <div class="clearfix"></div>
+            <div class="row">
+              <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="x_panel">
+                  <div class="x_title">
+                    <h2><?php echo $title; 
+					 foreach($sprh as $row_sprh);?><small></small></h2>
+                      <ul class="nav navbar-right panel_toolbox">
+                      <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+                      </li>
+                      <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                          <li><a href="<?php echo site_url('spr/input_spr'); ?>"><i class="fa fa-plus-circle"></i> Tambah SPR</a>
+                          <li><a target="_blank" href="<?php echo site_url('spr/print_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4)); ?>"><i class="fa fa-print"></i> Cetak SPR Standard</a>
+                          </li>
+                          <li><a target="_blank" href="<?php echo site_url('spr/print_sprf/'.$this->uri->segment(3).'/'.$this->uri->segment(4)); ?>"><i class="fa fa-print"></i> Cetak SPR Fitur</a>
+                          </li>
+                           <li><a target="_blank" href="<?php echo site_url('spr/print_sprb/'.$this->uri->segment(3).'/'.$this->uri->segment(4)); ?>"><i class="fa fa-print"></i> Cetak SPR Biaya Titipan</a>
+                          </li>
+                           <li><a target="_blank" href="<?php echo site_url('spr/print_spr_btl/'.$this->uri->segment(3).'/'.$this->uri->segment(4).'/'.$row_sprh->blok.'/'.$row_sprh->no); ?>"><i class="fa fa-print"></i> Cetak SPR Batal</a>
+                          </li>
+                          <li><a target="_blank" href="<?php echo site_url('byr/cetak_kwt_btl/'.$this->uri->segment(3).'/'.$this->uri->segment(4)); ?>"><i class="fa fa-print"></i> Cetak Kwitansi Batal</a>
+                          </li>
+                           <li><a href="#" data-target="#batalSPRModal" data-toggle="modal"><i class="fa fa-ban"></i> Batalkan SPR</a>
+                          </li>
+                          <li><a href="#" data-target="#KPRModal" data-toggle="modal"><i class="fa fa-level-down"></i> Penurunan KPR</a>
+                          </li>
+                          <li><a target="_blank" href="<?php echo site_url('spr/print_kpr/'.$this->uri->segment(3).'/'.$this->uri->segment(4)); ?>"><i class="fa fa-print"></i> Cetak Penurunan KPR</a>
+                          </li>
+                        </ul>
+                      </li>
+                      <li><a class="close-link"><i class="fa fa-close"></i></a>
+                      </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                  </div>
+                  <div class="x_content">
+                    <?php $this->lib->disp_msg(); ?>
+                    <br />
+                     <?php
+					 
+					  
+					  if($row_sprh->status == 'BTL')
+					  {
+						 $disabled = 'disabled="disabled"'; 
+						 
+						echo '<div class="alert alert-danger alert-dismissible fade in" role="alert">
+                         <span aria-hidden="true">SPR ini telah dibatalkan, anda tidak bisa melakukan perubahan data.</span></div>';
+					  }
+					  else
+					  {
+						  $disabled = "";
+					  }
+					  ?>
+                      
+                      <div class="col-md-2">
+                      <p>Progress Uang Muka (%)</p>
+                      <input class="knob" data-width="100" data-height="120" data-min="0" data-displayPrevious=true data-fgColor="#26B99A" value="<?php echo $this->lib->disp_prog_um($row_sprh->projid,$row_sprh->sprno); ?>" readonly>
+                    </div>
+                     <div class="col-md-2">
+                      <p>Progress Dokumen (%)</p>
+                     <input class="knob" data-width="100" data-height="120" data-min="0" data-displayPrevious=true data-fgColor="#26B99A" value="<?php echo $this->lib->disp_prog_dok($row_sprh->projid,$row_sprh->sprno); ?>" readonly>
+                    </div>
+                    <div class="col-md-2">
+                      <p>Progress Bangun (%)</p>
+                     <input class="knob" data-width="100" data-height="120" data-min="0" data-displayPrevious=true data-fgColor="#26B99A" value="<?php echo $this->lib->disp_prog_kav($row_sprh->projid,$row_sprh->blok,$row_sprh->no); ?>" readonly>
+                    </div>
+                    <table width="100%" border="0" class="table table-striped table-bordered">
+                      <tr>
+                        <td colspan="6" align="center"><strong>Stok Kavling Yang Dipesan</strong></td>
+                      </tr>
+                      <tr>
+                        <td width="83"><strong>Project / Blok / No </strong></td>
+                        <td width="30" align="center"><strong>:</strong></td>
+                        <td width="194"><?php echo $row_sprh->namproj; ?> / <?php echo $row_sprh->blok; ?> / <?php echo $row_sprh->no; ?></td>
+                        <td width="105"><strong>Harga Unit</strong></td>
+                        <td width="27" align="center"><strong>:</strong></td>
+                        <td width="194"><?php echo $this->lib->format_idr($row_sprh->hrgstd);
+	 ?></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Lot</strong></td>
+                        <td align="center"><strong>:</strong></td>
+                        <td><?php echo $row_sprh->lot; ?></td>
+                        <td width="105"><strong>Fitur</strong></td>
+                        <td width="27" align="center"><strong>:</strong></td>
+                        <td width="194"><?php
+					  			foreach($sprf_h as $row_sprfh)
+								{
+					  				if($row_sprfh->ftid=='TLE')
+									{
+					   			?>
+                              <span class="label label-success "><?php echo $row_sprfh->namfit;  ?>:<?php echo $row_sprfh->ltnh;  ?></span>
+                              <?php
+                                     }
+                                    else
+                                    {
+                                    ?>
+                              <span class="label label-success "><?php echo $row_sprfh->namfit;  ?></span>
+                            <?php
+                                }
+                                }
+                                ?></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Tipe</strong></td>
+                        <td align="center"><strong>:</strong></td>
+                        <td><?php echo $row_sprh->tipe; ?></td>
+                        <td><strong>Harga Fitur </strong></td>
+                        <td width="27" align="center"><strong>:</strong></td>
+                        <td><?php 
+							$tot_hrgf = 0;
+							foreach($sprf_h as $row_sprfh)
+								{
+								?>
+                              <?php echo $row_sprfh->namfit;  ?> :
+                              <?php 
+								if($row_sprfh->ftid=='TLE')
+									{
+										$tot_hrgf = $tot_hrgf + ($row_sprfh->hrg*$row_sprfh->ltnh);
+								echo $this->lib->format_idr($row_sprfh->hrg*$row_sprfh->ltnh).'('.$this->lib->format_idr($row_sprfh->hrg) .' X '.$row_sprfh->ltnh.'M<sup>2</sup>)';
+									}
+								else
+									{
+										$tot_hrgf = $tot_hrgf + $row_sprfh->hrg;
+								echo $this->lib->format_idr($row_sprfh->hrg);
+								?>
+                              <br />
+                            <?php
+									}
+								}
+							  ?></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Luas Tanah</strong></td>
+                        <td align="center"><strong>:</strong></td>
+                        <td><?php echo number_format($row_sprh->ltstd); ?> M<sup>2</sup></td>
+                        <td><strong>Diskon</strong></td>
+                        <td align="center"><strong>:</strong></td>
+                        <?php
+
+
+                            $total = $tot_hrgf + $row_sprh->hrgstd;
+                            $tampildis = '';
+                            if($row_sprh->distp == 'V')
+                            {
+                              $dis_val = $row_sprh->dis;
+                            }
+                            elseif($row_sprh->distp == 'P')
+                            {
+                              $dis_val = ($row_sprh->dis / 100) * $this->lib->get_harga($row_sprh->projid,$row_sprh->lot,$row_sprh->tipe,'H');
+                              $tampildis = '&nbsp;('.$row_sprh->dis.'%)';
+                            }
+                            else
+                            {
+                              $dis_val = 0;
+                            }
+                            $total = $total - $dis_val;
+                        ?>
+                        <td><?php echo $this->lib->format_idr($dis_val) . $tampildis ?></td>
+                      </tr> 
+                      <td>&nbsp;</td>
+                        <td align="center">&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td><strong>Harga Total</strong></td>
+                        <td align="center"><strong>:</strong></td>
+                        <td><?php echo $this->lib->format_idr($total) ?></td>
+                      </tr> 
+                  <?php if($row_sprh->ppn > 0)
+					  {
+
+              $dppppn = $total * 11/12 ;
+              $ppn = round($dppppn * 12/100);	
+              $total = $total + $ppn;	
+          
+            } else
+            {
+              $dppppn = $total;
+              $ppn = 0;
+            }
+					  ?>
+
+<tr>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td><strong>Harga Jual Unit</strong></td>
+   <td width="27" align="center"><strong>:</strong></td>
+   <td><?php echo $this->lib->format_idr($dppppn);?></td>
+</tr>
+<tr>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td><strong>PPN</strong></td>
+   <td width="27" align="center"><strong>:</strong></td>
+   <td><?php echo $this->lib->format_idr($ppn);?></td>
+</tr>
+<tr>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td><strong>Harga Total + PPN</strong></td>
+   <td width="27" align="center"><strong>:</strong></td>
+   <td><?php echo $this->lib->format_idr($total);?></td>
+</tr>
+
+                      <!-- <php } ?> -->
+<tr>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td><strong>Biaya Biaya Titipan</strong></td>
+   <td width="27" align="center"><strong>:</strong></td>
+   <td><?php echo $this->lib->format_idr($row_sprh->byttp);?></td>
+</tr>
+                    </table>
+
+
+                       <table width="100%" border="0" class="table table-striped table-bordered">
+                        <tr>
+                          <td width="130"><strong>Salesman</strong></td>
+                          <td width="27" align="center"><strong>:</strong></td>
+                          <td>
+                          <?php echo $salesman; ?>
+                        </td>
+                        </tr>
+                        </table>
+
+
+
+
+                    <br />
+                   
+                    <div class="" role="tabpanel" data-example-id="togglable-tabs">
+                      <ul id="myTab" class="nav nav-tabs bar_tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#tab_content1" id="home-tab" role="tab" data-toggle="tab" aria-expanded="true">Konsumen</a>
+                        </li>
+                        <li role="presentation" class=""><a href="#tab_content2" role="tab" id="profile-tab" data-toggle="tab" aria-expanded="false">SPR Standard</a>
+                        </li>
+                        <?php
+						if(!empty($sprf_h))
+						{
+						?>
+                        <li role="presentation" class=""><a href="#tab_content3" role="tab" id="profile-tab2" data-toggle="tab" aria-expanded="false">SPR Fitur</a>
+                        </li>
+                        <?php
+						}
+						?>
+                         <?php
+						if(!empty($sprb))
+						{
+						?>
+                        <li role="presentation" class=""><a href="#tab_content7" role="tab" id="profile-tab2" data-toggle="tab" aria-expanded="false">Biaya Biaya Titipan</a>
+                        </li>
+                        <?php
+						}
+						?>
+                        <li role="presentation" class=""><a href="#tab_content4" role="tab" id="profile-tab2" data-toggle="tab" aria-expanded="false">Status Kavling</a></li>
+                        <li role="presentation" class=""><a href="#tab_content5" role="tab" id="profile-tab2" data-toggle="tab" aria-expanded="false">Upload Dokumen</a></li>
+                         <li role="presentation" class=""><a href="#tab_content6" role="tab" id="profile-tab2" data-toggle="tab" aria-expanded="false">History Pembayaran</a></li>
+                      </ul>
+                      
+                      <div id="myTabContent" class="tab-content">
+                      	<div role="tabpanel" class="tab-pane fade active in" id="tab_content1" aria-labelledby="home-tab">
+             <form id="form1" name="form1" class="form-horizontal form-label-left" method="post" action="<?php echo $form_action; ?>" >            
+                         <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Nama
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_nama" required="required" class="form-control col-md-7 col-xs-12" id="txt_nama" value="<?php echo $row_sprh->nama; ?>" maxlength="100" />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">No. KTP
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_ktp" required="required" class="form-control col-md-7 col-xs-12" id="txt_ktp" value="<?php echo $row_sprh->ktp; ?>" maxlength="20" />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">No. NPWP
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_npwp" class="form-control col-md-7 col-xs-12" id="txt_npwp" value="<?php echo $row_sprh->npwp; ?>" maxlength="20"/>
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Alamat
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <textarea name="txt_alm" cols="2" rows="5" required="required" class="form-control col-md-7 col-xs-12" id="txt_alm"><?php echo $row_sprh->alm; ?></textarea>
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">No. Telp
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_telp" required="required" class="form-control col-md-7 col-xs-12" id="txt_telp" value="<?php echo $row_sprh->telp; ?>" maxlength="15" />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">No. Telp 2
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_telp2" class="form-control col-md-7 col-xs-12" id="txt_telp2" value="<?php echo $row_sprh->telp2; ?>" maxlength="15" />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Email
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_email" type="email" id="txt_email" class="form-control col-md-7 col-xs-12" data-parsley-type="email" maxlength="100" value="<?php echo $row_sprh->email; ?>" />
+                           </div>
+                         </div>
+                          <div class="form-group">
+                           <label class="control-label col-md-3 col-sm-3 col-xs-12">
+                       	  </label>
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                         <button <?php echo $disabled; ?> type="submit" id="btn_update" class="btn btn-success"><i class="fa fa-save"></i> Ubah Data Konsumen</button>
+                         </div>
+                         </div>
+
+<!-- BAMS 11-03-2025 START -->
+                         <div class="form-group">
+    <label class="control-label col-md-3 col-sm-3 col-xs-12">Jenis</label>
+    <div class="col-md-6 col-sm-6 col-xs-12">
+        
+        <div class="radio">
+            <label>
+                <input type="radio" name="rd_jenis" value="Subsidi" <?php echo set_radio('rd_jenis', 'Subsidi', isset($jenis) ? ($jenis == 'Subsidi') : TRUE); ?> /> Subsidi
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="rd_jenis" value="Komersial" <?php echo set_radio('rd_jenis', 'Komersial', isset($jenis) ? ($jenis == 'Komersial') : FALSE); ?> /> Komersial
+            </label>
+        </div>
+    </div>
+</div>
+<!-- BAMS 11-03-2025 END -->
+
+
+
+                        </div>
+                        </form> 
+                        <div role="tabpanel" class="tab-pane fade in" id="tab_content2" aria-labelledby="home-tab">
+                         <form id="form2" name="form2" class="form-horizontal form-label-left" method="post" action="<?php echo $form_action2; ?>">
+
+                         <div class="form-group" style="display:none;">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Ada PPN ?
+                        </label>
+                        <div class="checkbox">
+                            <label>
+                              <input type="checkbox" name="chk_ppn" id="chk_ppn" value="X" class="js-switch" <?php if($row_sprh->ppn > 0) {echo 'checked="checked"'; }  ?> >
+                            </label>
+                          </div>
+                      </div>
+                      
+                           <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Tgl Transaksi
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <input name="txt_tgl_trans" id="txt_tgl_trans" class="form-control col-md-7 col-xs-12" required="required" value="<?php echo $this->lib->disp_date($row_sprh->crdat); ?>">
+                        </div>
+                      </div>
+                      
+                        <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Uang Tanda Jadi
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_bkf" required="required" class="form-control col-md-7 col-xs-12" id="txt_bkf" value="<?php echo $row_sprh->utj; ?>" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true "  />
+                            <input name="txt_hrgstd" type="hidden" id="txt_hrgstd" 
+                            value="<?php 
+							//echo $row_sprh->hrgstd; 
+							echo $this->lib->get_harga($row_sprh->projid,$row_sprh->lot,$row_sprh->tipe,'H');?>" />
+                            <input name="txt_byttp" type="hidden" id="txt_byttp" 
+                            value="<?php //echo $row_sprh->byttp; 
+							echo $this->lib->get_harga($row_sprh->projid,$row_sprh->lot,$row_sprh->tipe,'B');?>" />
+                            <input name="txt_spr_crdat" type="hidden" id="txt_spr_crdat" value="<?php echo $row_sprh->crdat; ?>" />
+                             <input name="txt_spr_hrgdat" type="hidden" id="txt_spr_hrgdat" value="<?php echo $this->lib->get_harga($row_sprh->projid,$row_sprh->lot,$row_sprh->tipe,'T'); ?>" />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Cara bayar Uang Muka
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_byr" name="cb_byr"  class="form-control col-md-7 col-xs-12" required="required" >
+                           <option value="">Pilih....</option>
+                           <option value="T" <?php echo set_select('cb_byr', 'T', ($row_sprh->umbyr == 'T' ? true : false)); ?> >TUNAI</option>
+                           <option value="C" <?php echo set_select('cb_byr', 'T', ($row_sprh->umbyr == 'C' ? true : false)); ?>>CICILAN</option>
+                           </select>
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Uang Muka
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_dp" required="required" class="form-control col-md-7 col-xs-12" id="txt_dp" value="<?php echo $row_sprh->umk; ?>"  data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true"  />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Pelunasan Cicilan
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_dp_cclns" required="required" class="form-control col-md-7 col-xs-12" id="txt_dp_cclns" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true"  value="<?php echo $row_sprh->cclns; ?>" />
+                           </div>
+                         </div>
+                         
+                            <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Lama Cicilan UM (X)
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_dp_ccl" id="txt_dp_ccl" class="form-control col-md-7 col-xs-12" required="required" type="number" value="<?php echo $row_sprh->umccl; ?>" data-parsley-maxccl= ""/>
+                           </div>
+                         </div>
+                         
+                         <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Tgl Jatuh Tempo UM
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <input name="txt_tgl_jtdp" id="txt_tgl_jtdp" class="form-control col-md-7 col-xs-12" required="required" value="<?php echo $this->lib->disp_date($jtmp); ?>" data-parsley-jtempo = "" >
+                        </div>
+                      </div>
+                      
+                           <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Lama Cicilan KPR (Thn)
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_kpr_ccl" id="txt_kpr_ccl" class="form-control col-md-7 col-xs-12" required="required" type="number" value="<?php echo $row_sprh->kpr_ccl; ?>" />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Diskon</label>
+                          
+                             <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_dis" name="cb_dis"  class="form-control col-md-7 col-xs-12" >
+                           <option value="">Pilih....</option>
+                           <option value="V" <?php echo set_select('cb_dis', 'V', ($row_sprh->distp == 'V' ? true : false)); ?>>Dalam Rp</option>
+                           <option value="P" <?php echo set_select('cb_dis', 'P', ($row_sprh->distp == 'P' ? true : false)); ?>>Dalam Persen (%)</option>
+                           </select>
+                           <?php
+						   if($row_sprh->distp == 'V')
+						   {
+							   $dis = $this->lib->format_idr($row_sprh->dis);
+						   }
+						   elseif($row_sprh->distp == 'P')
+						   {
+							  $dis = $row_sprh->dis; 
+						   }
+						   else
+						   {
+							   $dis = 0;
+						   }
+						   ?>
+                            <input name="txt_dis" id="txt_dis" class="form-control col-md-7 col-xs-12" value="<?php echo $dis; ?>"/>
+                            </div>
+                           </div>
+                           
+                            <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Disc UM ( BUM pemerintah )</label>
+                          
+                             <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_disum" name="cb_disum"  class="form-control col-md-7 col-xs-12">
+                           <option value="">Pilih....</option>
+                           <option value="V" <?php echo set_select('cb_disum', 'V', ($row_sprh->umdistp == 'V' ? true : false)); ?>>Dalam Rp</option>
+                           <option value="P" <?php echo set_select('cb_disum', 'P', ($row_sprh->umdistp == 'P' ? true : false)); ?>>Dalam Persen (%)</option>
+                           </select>
+                            <?php
+						   if($row_sprh->umdistp == 'V')
+						   {
+							   $disum = $this->lib->format_idr($row_sprh->umdis);
+						   }
+						   elseif($row_sprh->umdistp == 'P')
+						   {
+							  $disum = $row_sprh->umdis; 
+						   }
+						   else
+						   {
+							   $disum = 0;
+						   }
+						   ?>
+                            <input name="txt_disum" id="txt_disum" value="<?php echo $disum; ?>" class="form-control col-md-7 col-xs-12"  />
+                            </div>
+                           </div>
+                           
+                             <div class="form-group">
+                           <label class="control-label col-md-3 col-sm-3 col-xs-12">
+                       	  </label>
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                         <button <?php echo $disabled; ?> type="submit" id="btn_update_sprstd" class="btn btn-success"><i class="fa fa-save"></i> Ubah SPR Standard</button>
+                         </div>
+                         </div>
+                          </form> 
+                        </div>
+                       
+                         <?php
+						if(!empty($sprf))
+						{
+							foreach($sprf as $row_sprf);
+						?>
+                         <div role="tabpanel" class="tab-pane fade in" id="tab_content3" aria-labelledby="home-tab">
+                         <form id="form3" name="form3" class="form-horizontal form-label-left" method="post" action="<?php echo $form_action3; ?>">
+                         <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Cara bayar Uang Fitur
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_byrf" name="cb_byrf"  class="form-control col-md-7 col-xs-12" required="required" >
+                           <option value="">Pilih....</option>
+                           <option value="T" <?php echo set_select('cb_byrf', 'T', ($row_sprf->fbyr == 'T' ? true : false)); ?>>TUNAI</option>
+                           <option value="C" <?php echo set_select('cb_byrf', 'C', ($row_sprf->fbyr == 'C' ? true : false)); ?>>CICILAN</option>
+                           </select>
+                           <input type="hidden" name="txt_tot_hrgf" id="txt_tot_hrgf" value="<?php echo $row_sprf->hrgtotf; ?>" />
+                           <input name="txt_sprf_crdat" type="hidden" id="txt_sprf_crdat" value="<?php echo $row_sprh->crdat; ?>" />
+                           </div>
+                         </div>
+                         
+                           <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Lama Cicilan (X)
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_cclf" id="txt_cclf" class="form-control col-md-7 col-xs-12" required="required" type="number" value="<?php echo $row_sprf->fccl; ?>" data-parsley-maxcclf= "" />
+                           </div>
+                         </div>
+                         
+                            <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Pelunasan Cicilan
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_dp_cclnf" required="required" class="form-control col-md-7 col-xs-12" id="txt_dp_cclnf" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true" value="<?php echo $row_sprf->cclnf; ?>" />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Tgl Jatuh Tempo
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <input name="txt_tgl_jtf" id="txt_tgl_jtf" class="form-control col-md-7 col-xs-12" required="required" value="<?php echo $this->lib->disp_date($jtmpf); ?>" data-parsley-jtempof = "" >
+                        </div>
+                      </div>
+                      
+                       <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Diskon</label>
+                             <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_disf" name="cb_disf"  class="form-control col-md-7 col-xs-12" >
+                           <option value="">Pilih....</option>
+                           <option value="V" <?php echo set_select('cb_disf', 'V', ($row_sprf->disftp == 'V' ? true : false)); ?>>Dalam Rp</option>
+                           <option value="P" <?php echo set_select('cb_disf', 'P', ($row_sprf->disftp == 'P' ? true : false)); ?>>Dalam Persen (%)</option>
+                           </select>
+                            <?php
+						   if($row_sprf->disftp == 'V')
+						   {
+							   $disf = $row_sprf->disf;
+						   }
+						   elseif($row_sprf->disftp == 'P')
+						   {
+							   $disf = $row_sprf->disf;
+						   }
+						    else
+						   {
+							   $disf = 0;
+						   }
+						   ?>
+                            <input name="txt_disf" id="txt_disf" class="form-control col-md-7 col-xs-12" value="<?php echo $disf; ?>"  />
+                            </div>
+                            </div>
+                             <div class="form-group">
+                           <label class="control-label col-md-3 col-sm-3 col-xs-12">
+                       	  </label>
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                         <button <?php echo $disabled; ?> type="submit" id="btn_update_sprf" class="btn btn-success"><i class="fa fa-save"></i> Ubah SPR Fitur</button>
+                         </div>
+                         </div>
+                         </form>
+                          
+                         </div>
+                        <?php
+						}
+						?>
+                     <?php
+					 if(!empty($sprb))
+					 {
+							foreach($sprb as $row_sprb);
+						?>
+                        	<div role="tabpanel" class="tab-pane fade in" id="tab_content7" aria-labelledby="home-tab">
+                             <form id="form4" name="form4" class="form-horizontal form-label-left" method="post" action="<?php echo $form_action4; ?>">
+                             <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Cara bayar Biaya Biaya Titipan
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_byrb" name="cb_byrb"  class="form-control col-md-7 col-xs-12" required="required">
+                           <option value="">Pilih....</option>
+                          <option value="T" <?php echo set_select('cb_byrb', 'T', ($row_sprb->bbyr == 'T' ? true : false)); ?>>TUNAI</option>
+                           <option value="C" <?php echo set_select('cb_byrb', 'C', ($row_sprb->bbyr == 'C' ? true : false)); ?>>CICILAN</option>
+                           </select>
+                           <input type="hidden" name="txt_tot_hrgb" id="txt_tot_hrgb" 
+                           value="<?php //echo $row_sprb->hrgtotb; 
+						   echo $this->lib->get_harga($row_sprh->projid,$row_sprh->lot,$row_sprh->tipe,'B'); ?>" />
+                           <input name="txt_sprb_crdat" type="hidden" id="txt_sprb_crdat" 
+                           value="<?php echo $row_sprh->crdat; ?>" />
+                           </div>
+                         </div>
+                         
+                          <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Lama Cicilan (X)
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_cclb" id="txt_cclb" class="form-control col-md-7 col-xs-12" required="required" type="number" data-parsley-maxcclb= "" value="<?php echo $row_sprb->bccl; ?>" />
+                           </div>
+                         </div>
+                         
+                            <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Pelunasan Cicilan
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_dp_cclnb" required="required" class="form-control col-md-7 col-xs-12" id="txt_dp_cclnb" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true"  value="<?php echo $row_sprb->cclnb; ?>" />
+                           </div>
+                         </div>
+                         
+                           <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Tgl Jatuh Tempo
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <input name="txt_tgl_jtb" id="txt_tgl_jtb" class="form-control col-md-7 col-xs-12" required="required" data-parsley-jtempob = "" value="<?php echo $this->lib->disp_date($jtmpb); ?>">
+                        </div>
+                      </div>
+                      
+                      <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Diskon</label>
+                             <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_disb" name="cb_disb"  class="form-control col-md-7 col-xs-12">
+                           <option value="">Pilih....</option>
+                            <option value="V" <?php echo set_select('cb_disb', 'V', ($row_sprb->disbtp == 'V' ? true : false)); ?>>Dalam Rp</option>
+                           <option value="P" <?php echo set_select('cb_disb', 'P', ($row_sprb->disbtp == 'P' ? true : false)); ?>>Dalam Persen (%)</option>
+                           </select>
+                           <?php
+						   if($row_sprb->disbtp == 'V')
+						   {
+							   $disb = $row_sprb->disb;
+						   }
+						   elseif($row_sprb->disbtp == 'P')
+						   {
+							   $disb = $row_sprb->disb;
+						   }
+						    else
+						   {
+							   $disb = 0;
+						   }
+						   ?>
+                            <input name="txt_disb" id="txt_disb" class="form-control col-md-7 col-xs-12" value="<?php echo $disb; ?>"  />
+                            </div>
+                           </div>
+                           
+                            <div class="form-group">
+                           <label class="control-label col-md-3 col-sm-3 col-xs-12">
+                       	  </label>
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                         <button <?php echo $disabled; ?> type="submit" id="btn_update_sprb" class="btn btn-success"><i class="fa fa-save"></i> Ubah SPR Biaya Biaya Titipan</button>
+                         </div>
+                         </div>
+                         
+                             </form>
+                           </div>
+                       <?php
+					 }
+					   ?>
+                        <div role="tabpanel" class="tab-pane fade in" id="tab_content4" aria-labelledby="home-tab">
+                        <?php
+									/*$query_kav = $this->db->query("SELECT status FROM `mkav` 
+									WHERE projid = '".$row_sprh->projid."'
+									AND blok = '".$row_sprh->blok."'
+									AND no = '".$row_sprh->no."'");
+									foreach($query_kav->result() as $row_kav);
+									if($row_kav->status != 'AKD')*/
+									if($this->lib->get_kav_status($row_sprh->projid,$row_sprh->blok,$row_sprh->no)!= 'AKD')
+									{
+									?>
+                         <button <?php echo $disabled; ?> type="button" id="btn_tambah_status" class="btn btn-info" data-target="#statusModal" data-toggle="modal"><i class="fa fa-plus-circle"></i> Tambah Status</button>
+                         <?php }
+						 else
+						 { echo '<div class="alert alert-danger alert-dismissible fade in" role="alert">
+                         <span aria-hidden="true">Status kavling sudah akad, tidak bisa tambah status!</span></div>'; }
+						 ?>
+                        <?php
+						$list_kavlog = $this->mod_kav->list_kavlog($row_sprh->projid,$row_sprh->blok,$row_sprh->no)->result();
+						?>
+                        <table class="table table-striped table-bordered">
+                     	 <thead>
+                        <tr>
+                          <th>Status</th>
+                          <th>Keterangan</th>
+                          <th>Dibuat Oleh</th>
+                          <th>Tgl Buat</th>
+                          <th>Jam Buat</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php foreach($list_kavlog as $row_klog)  
+						{
+						?>
+                        <tr>
+                          <td><?php echo $this->lib->get_status_text('KAV',$row_klog->status); ?></td>
+                           <td><?php echo $row_klog->ket; ?></td>
+                          <td><?php echo $row_klog->crby; ?></td>
+                          <td><?php echo $this->lib->disp_date( $row_klog->crdat ); ?></td>
+                          <td><?php echo $row_klog->crtim; ?></td>
+                        </tr>
+                        <?php
+						}
+						?>
+                         </tbody>
+                    	</table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane fade in" id="tab_content5" aria-labelledby="home-tab">
+                        <button <?php echo $disabled; ?> type="button" id="btn_tambah_dok" class="btn btn-info" data-target="#uploadModal" data-toggle="modal"><i class="fa fa-plus-circle"></i> Tambah Dokumen</button>
+                         <table class="table table-striped table-bordered">
+                     	 <thead>
+                        <tr>
+                          <th>Nama File</th>
+                          <th>Tipe File</th>
+                          <th>Ukuran (KB)</th>
+                          <th>Status</th>
+                          <th>Dibuat Oleh</th>
+                          <th>Tgl Buat</th>
+                          <th>Pilihan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php foreach($sprd as $row_sprd)  
+						{
+						?>
+                        <tr>
+                          <td><?php echo $row_sprd->namfile; ?></td>
+                           <td><?php echo $row_sprd->tipe; ?></td>
+                           <td><?php echo $row_sprd->size; ?></td>
+                             <td><?php echo $this->lib->get_status_text('DOK',$row_sprd->status); ?></td>
+                          <td><?php echo $row_sprd->crby; ?></td>
+                          <td><?php echo $this->lib->disp_date( $row_sprd->crdat ); ?></td>
+                          <td> <div class="btn-group btn-group-sm">
+                          <a target="_blank" href="https://docs.google.com/viewer?url=<?php echo $this->config->item('assets');?>/uploads/<?php echo $row_sprd->path; ?>" class="btn btn-success"><i class="fa fa-search-plus"></i> Lihat dokumen</a>
+<a target="_blank" href ="<?php echo $this->config->item('assets');?>/uploads/<?php echo $row_sprd->path; ?>"  class="btn btn-primary"><i class="fa fa-download"></i> Download</a><a title="<?php echo $row_sprd->namfile; ?>" href="<?php echo site_url('spr/delete_file/'.$row_sprd->sprno.'/'.$row_sprd->projid.'/'.$row_sprd->fid); ?>" class="btn btn-danger" id="confirm"><i class="fa fa-trash"></i> Hapus</a></div>
+</td>
+                        </tr>
+                        <?php
+						}
+						?>
+                         </tbody>
+                    	</table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane fade in" id="tab_content6" aria-labelledby="home-tab">
+                        <table class="table table-striped table-bordered">
+                     	 <thead>
+                        <tr>
+                          <th>No. Kwitansi</th>
+                          <th>Tanggal</th>
+                          <th>Tipe</th>
+                          <th>Angsuran Ke</th>
+                          <th>Total</th>
+                          <th>Keterangan</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php 
+						$totalall =0;
+						foreach($kwt as $row_kwt)  
+						{
+							$totalall = $totalall + $row_kwt->total;
+						?>
+                        <tr>
+                        <td><?php echo $this->lib->no_kwt($row_kwt->kwtno); ?></td>
+                        <td><?php echo $this->lib->disp_date($row_kwt->tgl); ?></td>
+                        <td><?php echo $this->lib->tipe_byr_txt($row_kwt->tipe); ?></td>
+                        <td><?php echo $row_kwt->ang; ?></td>
+                        <td align="right"><?php echo $this->lib->format_idr($row_kwt->total); ?></td>
+                        <td><?php echo $row_kwt->ket; ?></td>
+                        <td><a target="_blank" href="<?php echo site_url('byr/cetak_kwt/'.$row_sprh->projid.'/'.$row_kwt->kwtno.'/'.$row_sprh->sprno); ?>" class="btn btn-primary"><i class="fa fa-print"></i>Cetak</a></td>
+                       </tr>
+                       <?php
+						}
+						?>
+                       </tbody>
+                       <tfoot>
+                       <tr>
+                       <td></td>
+                       <td></td>
+                       <td></td>
+                       <td>Total sudah dibayar</td>
+                       <td align="right"><b><?php echo $this->lib->format_idr($totalall); ?></b></td>
+                        <td></td>
+                       <td></td>
+                       </tr>
+                       </tfoot>
+                       </table>
+                        </div>
+                      </div>
+                    </div>
+                      
+                       <div class="ln_solid"></div>
+                      <div class="form-group">
+                        <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                        
+                          <a href ="<?php echo $url_back; ?>"  class="btn btn-primary"><i class="fa fa-arrow-circle-left"></i> kembali</a>
+                          <!---- <button type="button" id="btn_periksa" class="btn btn-info"><i class="fa fa-check"></i> Verifikasi SPR</button> ---->
+                          
+                        </div>
+                      </div>
+                 
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /page content -->
+        
+         <!-- Modal Status -->
+  						<div class="modal fade bs-example-modal-lg" id="statusModal" role="dialog">
+    						<div class="modal-dialog modal-lg">
+    							 <!-- Modal content-->
+                                  <div class="modal-content">
+                                    <div class="modal-header">
+                                      <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                      <h4 class="modal-title">Tambah Status</h4>
+                                    </div>
+                                    <!-- Modal body-->
+                                    <div class="modal-body">
+                                     <form id="form_status" class="form-horizontal form-label-left" method="post" action="<?php echo $form_status; ?>">
+                                     <input type="hidden" name="txt_kav_sprno" value="<?php echo $row_sprh->sprno;?>" />
+                                     <input type="hidden" name="txt_kav_proj" value="<?php echo $row_sprh->projid;?>" />
+                                      <input type="hidden" name="txt_kav_blok" value="<?php echo $row_sprh->blok;?>" />
+                                       <input type="hidden" name="txt_kav_no" value="<?php echo $row_sprh->no;?>" />
+                                      <div class="form-group">
+                                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Status
+                                          </label>
+                                           <div class="col-md-6 col-sm-6 col-xs-12">
+                                           <select id="cb_stat" name="cb_stat"  class="form-control col-md-7 col-xs-12" required="required">
+                                          <?php echo $this->lib->generate_cb_stat_kav($row_sprh->projid,$row_sprh->blok,$row_sprh->no); ?>
+                                           </select>
+                                           </div>
+                                       </div>
+                                         
+                                          <div class="form-group">
+                                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Keterangan
+                                          </label>
+                                           <div class="col-md-6 col-sm-6 col-xs-12">
+                                           <textarea name="txt_ket" id="txt_ket" cols="2" rows="5" class="form-control col-md-7 col-xs-12"></textarea>
+                                           </div>
+                                         </div>
+                                         
+                                         
+                                  
+                                    </div>
+                                     <!-- Modal body-->
+                                     
+                                     <!-- Modal footer-->
+                                      <div class="modal-footer">
+         <button type="submit" id="btn_simpan" class="btn btn-success"><i class="fa fa-save"></i> Simpan</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </form>
+							  </div>
+        							<!-- Modal footer-->
+ 
+                          </div>
+	    </div>
+   						 </div>
+                         <!-- Modal Status -->
+                         
+                          <!-- Modal KPR -->
+  						<div class="modal fade bs-example-modal-lg" id="KPRModal" role="dialog">
+    						<div class="modal-dialog modal-lg">
+    							 <!-- Modal content-->
+                                  <div class="modal-content">
+                                    <div class="modal-header">
+                                      <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                      <h4 class="modal-title">Penurunan KPR</h4>
+                                    </div>
+                                    <!-- Modal body-->
+                                    <div class="modal-body">
+                                     <form id="form_kpr" class="form-horizontal form-label-left" method="post" action="<?php echo $form_kpr; ?>">
+                                     <input type="hidden" name="txt_kpr_sprno" value="<?php echo $row_sprh->sprno;?>" />
+                                     <input type="hidden" name="txt_kpr_proj" value="<?php echo $row_sprh->projid;?>" />
+                                      <input type="hidden" name="txt_kpr_blok" value="<?php echo $row_sprh->blok;?>" />
+                                       <input type="hidden" name="txt_kpr_no" value="<?php echo $row_sprh->no;?>" />
+                                     
+                                      <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">
+                          Kekurangan Uang Muka
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_umt" required="required" class="form-control col-md-7 col-xs-12" id="txt_umt" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true"  value="<?php echo $row_sprh->umt;?>"/>
+                           </div>
+                         </div>    
+                         
+                        
+                         <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Cara bayar
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_byr_umt" name="cb_byr_umt"  class="form-control col-md-7 col-xs-12" required="required" >
+                           <option value="">Pilih....</option>
+                           <option value="T" <?php echo set_select('cb_byr_umt', 'T', ($row_sprh->umtbyr == 'T' ? true : false)); ?> >TUNAI</option>
+                           <option value="C" <?php echo set_select('cb_byr_umt', 'T', ($row_sprh->umtbyr == 'C' ? true : false)); ?>>CICILAN</option>
+                           </select>
+                           </div>
+                         </div>
+                                         
+ <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Lama Cicilan (X)
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_umt_ccl" id="txt_umt_ccl" class="form-control col-md-7 col-xs-12" required="required" type="number" value="<?php echo $row_sprh->umtccl; ?>" data-parsley-maxccl= ""/>
+                           </div>
+                         </div>
+                         
+                         <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Tgl Jatuh Tempo
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <input name="txt_tgl_jtumt" id="txt_tgl_jtumt" class="form-control col-md-7 col-xs-12" required="required" value="<?php echo $this->lib->disp_date($jtmpkpr); ?>" data-parsley-jtempokpr = "" >
+                        </div>
+                      </div>        
+                      
+                       <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Pelunasan Cicilan
+                       	  </label>
+                           <div class="col-md-6 col-sm-6 col-xs-12">
+                            <input name="txt_umt_cclns" required="required" class="form-control col-md-7 col-xs-12" id="txt_umt_cclns" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true"  value="<?php echo $row_sprh->umtcclns; ?>" />
+                           </div>
+                         </div>
+                                                   
+                                    </div>
+                                     <!-- Modal body-->
+                                     
+                                     <!-- Modal footer-->
+                                      <div class="modal-footer">
+         <?php if($this->lib->cek_prog_done($row_sprh->projid,$row_sprh->sprno,$row_sprh->blok,$row_sprh->no)==TRUE || $this->lib->get_kav_status($row_sprh->projid,$row_sprh->blok,$row_sprh->no)== 'AKD')
+		 {
+		?>                            
+         <button type="submit" id="btn_save_kpr" class="btn btn-success"><i class="fa fa-save"></i> Simpan</button>
+         <?php
+		 }
+		 else
+		 {
+			echo '<div class="alert alert-danger alert-dismissible fade in" role="alert">
+                         <span aria-hidden="true">Total progress belum 100% atau status sudah akad, tidak bisa input penurunan KPR!</span></div>'; 
+		 }
+		 ?>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </form>
+							  </div>
+        							<!-- Modal footer-->
+ 
+                          </div>
+	    </div>
+   						 </div>
+                         <!-- Modal KPR -->
+                                              
+                          <!-- Modal Upload -->
+  						<div class="modal fade bs-example-modal-lg" id="uploadModal" role="dialog">
+    						<div class="modal-dialog modal-lg">
+    							 <!-- Modal content-->
+                                  <div class="modal-content">
+                                    <div class="modal-header">
+                                      <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                      <h4 class="modal-title">Tambah Dokumen</h4>
+                                    </div>
+                                    <!-- Modal body-->
+                                    <div class="modal-body">
+                                     <form id="form_status" class="form-horizontal form-label-left" method="post" action="<?php echo $form_upload; ?>" enctype="multipart/form-data" >
+                                     <input type="hidden" name="txt_upl_sprno" value="<?php echo $row_sprh->sprno;?>" />
+                                     <input type="hidden" name="txt_upl_proj" value="<?php echo $row_sprh->projid;?>" />
+                                      <div class="form-group">
+                                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Status
+                                          </label>
+                                           <div class="col-md-6 col-sm-6 col-xs-12">
+                                           <select id="cb_stat_dok" name="cb_stat_dok"  class="form-control col-md-7 col-xs-12" required="required">
+                                          <?php echo $this->lib->generate_cb_stat_dok($row_sprh->projid,$row_sprh->sprno); ?>
+                                           </select>
+                                           </div>
+                                       </div>
+                                      <div class="form-group">
+                                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Pilih File
+                                          </label>
+                                           <div class="col-md-6 col-sm-6 col-xs-12">
+                                          <input type="file" name="userfile" id="userfile" required="required" />
+                                           </div>
+                                         </div>
+                                      
+                                    </div>
+                                     <!-- Modal body-->
+                                     
+                                     <!-- Modal footer-->
+                                      <div class="modal-footer">
+         <button type="submit" id="btn_upload" class="btn btn-success"><i class="fa fa-upload"></i> Upload</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </form>
+        								</div>
+        							<!-- Modal footer-->
+                                     </div>
+   							 </div>
+   						 </div>
+                         <!-- Modal Upload -->
+                         
+     <!-- Modal Batal SPR -->
+  						<div class="modal fade bs-example-modal-lg" id="batalSPRModal" role="dialog">
+    						<div class="modal-dialog modal-lg">
+    							 <!-- Modal content-->
+                                  <div class="modal-content">
+                                    <div class="modal-header">
+                                      <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                      <h4 class="modal-title">Batalkan SPR</h4>
+                                    </div>
+                                    <!-- Modal body-->
+                                    <div class="modal-body">
+                                     <form id="form_batal" class="form-horizontal form-label-left" method="post" action="<?php echo $form_batal; ?>" >
+                                     <input type="hidden" name="txt_btl_sprno" value="<?php echo $row_sprh->sprno;?>" />
+                                     <input type="hidden" name="txt_btl_proj" value="<?php echo $row_sprh->projid;?>" />
+                                      <input type="hidden" name="txt_btl_blok" value="<?php echo $row_sprh->blok;?>" />
+                                       <input type="hidden" name="txt_btl_no" value="<?php echo $row_sprh->no;?>" />
+                                     
+                        <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Tanggal Batal
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                        <input name="txt_tgl_btl" id="txt_tgl_btl" class="form-control col-md-7 col-xs-12" required="required" value="<?= ($row_sprh->btldat == '0000-00-00') ? date('d/m/Y') : $this->lib->disp_date($row_sprh->btldat); ?>" >
+                        </div>
+                      </div>
+                      
+                       <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Alasan Batal</label>
+                             <div class="col-md-6 col-sm-6 col-xs-12">
+                           <select id="cb_btl" name="cb_btl"  class="form-control col-md-7 col-xs-12" >
+                           <option value="BT1" <?php echo ($row_sprh->btlstat == 'BT1') ? "selected='selected'" : ''; ?> >BI Checking</option>
+                           <option value="BT2" <?php echo ($row_sprh->btlstat == 'BT2') ? "selected='selected'" : ''; ?>>Pembatalan Sepihak</option>
+                           <option value="BT3" <?php echo ($row_sprh->btlstat == 'BT3') ? "selected='selected'" : ''; ?>>Penolakan Bank</option>
+                           <option value="BT4" <?php echo ($row_sprh->btlstat == 'BT4') ? "selected='selected'" : ''; ?>>Pindah Kavling</option>
+                           </select>
+                        </div>
+                        </div>
+                        
+                        <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Total Uang Yang Disetor
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                        <input name="txt_byr_hid" id="txt_byr_hid" class="form-control col-md-7 col-xs-12" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true " readonly="readonly" value="<?php if($row_sprh->btlstat != '')
+                            {
+                            echo $row_sprh->totsetor;
+                            }
+                        else
+                        {
+                            echo $tot_byr;
+                        }?>" >
+                        </div>
+                      </div>
+                      
+                        <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Total Uang Yang Dikembalikan
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                        <input name="txt_byr" id="txt_byr" class="form-control col-md-7 col-xs-12" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true " readonly="readonly" value="<?php if($row_sprh->btlstat != '')
+                        {
+                            echo $row_sprh->totbyr;
+                        }
+                        else
+                        {
+                            echo $tot_byr;
+                        }?>" >
+                        </div>
+                      </div>
+                      
+                        <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Biaya Administrasi
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                        <input name="txt_by_adm" id="txt_by_adm" class="form-control col-md-7 col-xs-12" required="required" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true " value="<?php echo $row_sprh->byadm; ?>">
+                        </div>
+                      </div>
+                      
+                        <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Bank Konsumen
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <select name="cb_bank" id="cb_bank" class="form-control selectpicker" data-live-search="true" required >
+                          <?php //echo $cb_bank;  ?>
+                          <?php echo $this->lib->generate_cb_bank($row_sprh->bankid); ?>
+                          </select>
+                        </div>
+                      </div>
+                      
+                       <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">No Rekening Konsumen<span class="required">*</span>
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                           <input name="txt_accno" id="txt_accno" class="form-control col-md-7 col-xs-12"  maxlength="20" required="required" value="<?php echo $row_sprh->accno; ?>">
+                        </div>
+                      </div>
+                      
+                       <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Atas Nama<span class="required">*</span>
+                        </label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                           <input name="txt_namacc" id="txt_namacc" class="form-control col-md-7 col-xs-12" maxlength="100" required="required" value="<?php echo $row_sprh->namacc; ?>" >
+                        </div>
+                      </div>	
+                      
+                                     <!-- Modal body-->
+                                     
+                                     <!-- Modal footer-->
+                                      <div class="modal-footer">
+                                      <input type="hidden" id="txt_btlstat" name="txt_btlstat" value="<?php echo $row_sprh->btlstat; ?>" />
+          <?php if($row_sprh->btlstat == '')
+		  {
+		  ?>
+         <button <?php //echo $disabled; ?> type="submit" id="btn_batal" class="btn btn-danger"><i class="fa fa-ban"></i> Batalkan SPR</button>
+         <?php
+		  }
+		  else
+		  {
+		  ?>
+           <button type="submit" id="btn_batal" class="btn btn-success"><i class="fa fa-save"></i> Ubah Data Bank</button>
+          <?php
+		  }
+		  ?>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </form>
+        								</div>
+        							<!-- Modal footer-->
+                                     </div>
+   							 </div>
+   						 </div>
+                         <!-- Modal Batal SPR -->
+                         </div>                       
+<?php $this->load->view('footer'); ?>
+
+<script src="<?php echo $this->config->item('assets');?>/bootbox.min.js"></script>
+<script src="<?php echo $this->config->item('assets');?>/bootstrap-select-1.12.3/js/bootstrap-select.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){	
+$('.selectpicker').selectpicker();
+});
+</script>
+ <script>
+$("a#confirm").click(function(e) {
+	var url = $(this).attr('href');
+	var title = $(this).attr('title');
+	e.preventDefault();
+	
+	bootbox.confirm("Hapus dokumen "+title+" ?", function(result) {
+		if(result)
+		{
+			location.href=url;
+		}
+	}); 
+ 
+});
+    </script>
+
+<script>
+
+
+       $(document).ready(function() {
+		   
+		   $( "#btn_batal" ).click(function() {
+
+	$('#form_batal').parsley().validate();
+
+});
+
+function hitung()
+	{
+		var by_adm = $("#txt_by_adm").val();
+		var byr_hid = $("#txt_byr_hid").val();
+		
+		while(by_adm.indexOf('.')!=-1)by_adm= by_adm.replace('.','');
+		while(byr_hid.indexOf('.')!=-1)byr_hid= byr_hid.replace('.','');
+		
+		//console.log( parseFloat(byr));
+		//console.log(parseFloat(by_adm));
+		
+		var total =  parseFloat(byr_hid) - parseFloat(by_adm);
+		
+		$("#txt_byr").val(total);
+	}
+	$( "#txt_by_adm" ).keyup(function() {
+		
+		hitung();
+	});
+
+		    $('input[name="txt_tgl_btl"]').daterangepicker({
+        singleDatePicker: true,
+        showDropdowns: true,
+		autoUpdateInput: false/*,
+		 locale: {
+            format: 'DD/MM/YYYY'
+        }*/
+    });
+	
+	$('input[name="txt_tgl_btl"]').on('apply.daterangepicker', function(ev, picker) {
+      $(this).val(picker.startDate.format('DD/MM/YYYY'));
+  });
+  
+/*--------------------------- Form konsumen -----------------------------*/
+
+$( "#btn_update" ).click(function() {
+
+	$('#form1').parsley().validate();
+
+});
+
+/*--------------------------- Form konsumen -----------------------------*/
+
+/*--------------------------- Form SPR KPR -----------------------------*/	 	
+		$('input[name="txt_tgl_jtumt"]').daterangepicker({
+        singleDatePicker: true,
+        showDropdowns: true,
+		autoUpdateInput: false/*,
+		 locale: {
+            format: 'DD/MM/YYYY'
+        }*/
+    });
+	
+	$('input[name="txt_tgl_jtumt"]').on('apply.daterangepicker', function(ev, picker) {
+      $(this).val(picker.startDate.format('DD/MM/YYYY'));
+  });
+  
+	window.Parsley.addValidator('jtempokpr', {
+  validateString: function(value) {
+	  //alert(value.substring(0, 2));
+    return value.substring(0, 2) === '14' || value.substring(0, 2) === '28';
+  },
+  messages: {
+    en: 'Jatuh tempo harus  tanggal 14 atau 28'
+  }
+});
+	
+	  if($( "#cb_byr_umt" ).val()=='T')
+	   	  {
+		   $( "#txt_umt_ccl" ).prop( "readonly", 'readonly' );
+		   $( "#txt_umt_ccl" ).prop( "required", "" );
+		   $( "#txt_umt_ccl" ).val('');
+		   
+		   $( "#txt_umt_cclns" ).prop( "readonly", 'readonly' );
+		   $( "#txt_umt_cclns" ).prop( "required", "" );
+		   $( "#txt_umt_cclns" ).val('');
+		   }
+		   else
+		   {
+			    $( "#txt_umt_ccl" ).prop( "readonly", '' );
+		  		$( "#txt_umt_ccl" ).prop( "required", "required" );
+		  
+		  		$( "#txt_umt_cclns" ).prop( "readonly", '' );
+		  		$( "#txt_umt_cclns" ).prop( "required", "required" );
+		   }
+		   
+	$( "#cb_byr_umt" ).change(function() {
+	  if($( "#cb_byr_umt" ).val()=='T')
+	  {
+
+		   $( "#txt_umt_ccl" ).prop( "readonly", 'readonly' );
+		   $( "#txt_umt_ccl" ).prop( "required", "" );
+		   $( "#txt_umt_ccl" ).val('');
+		   
+		   $( "#txt_umt_cclns" ).prop( "readonly", 'readonly' );
+		   $( "#txt_umt_cclns" ).prop( "required", "" );
+		   $( "#txt_umt_cclns" ).val('');
+		 
+	  }
+	  else
+	  {
+
+		  $( "#txt_umt_ccl" ).prop( "readonly", '' );
+		  $( "#txt_umt_ccl" ).prop( "required", "required" );
+		  
+		  $( "#txt_umt_cclns" ).prop( "readonly", '' );
+		  $( "#txt_umt_cclns" ).prop( "required", "required" );
+		
+	  }
+  });
+
+	$( "#btn_save_kpr" ).click(function() {
+	$('#form_kpr').parsley().validate();
+	});
+	
+/*--------------------------- Form SPR KPR -----------------------------*/
+	
+/*--------------------------- Form SPR Standard -----------------------------*/
+$( "#btn_update_sprstd" ).click(function() {
+
+	$('#form2').parsley().validate();
+
+});
+
+		  if($( "#cb_dis" ).val()=='')
+	   	  {
+		   $( "#txt_dis" ).prop( "readonly", 'readonly' );
+		   $( "#txt_dis" ).prop( "required", "" );
+		   }
+		   
+		    if($( "#cb_disum" ).val()=='')
+	   	  {
+		   $( "#txt_disum" ).prop( "readonly", 'readonly' );
+		   $( "#txt_disum" ).prop( "required", "" );
+		   }
+
+window.Parsley.addValidator('maxccl', {
+  validateString: function(value) {
+	  //alert(value.substring(0, 2));
+    return value <= 10;
+  },
+  messages: {
+    en: 'Cicilan tidak boleh lebih dari 10 kali'
+  }
+});	   
+		   window.Parsley.addValidator('jtempo', {
+  validateString: function(value) {
+    return value.substring(0, 2) === '14' || value.substring(0, 2) === '28';
+  },
+  messages: {
+    en: 'Jatuh tempo harus  tanggal 14 atau 28'
+  }
+});
+
+$( "#cb_byr" ).change(function() {
+	  if($( "#cb_byr" ).val()=='T')
+	  {
+
+		   $( "#txt_dp_ccl" ).prop( "readonly", 'readonly' );
+		   $( "#txt_dp_ccl" ).prop( "required", "" );
+		   $( "#txt_dp_ccl" ).val('');
+		   
+		   $( "#txt_dp_cclns" ).prop( "readonly", 'readonly' );
+		   $( "#txt_dp_cclns" ).prop( "required", "" );
+		   $( "#txt_dp_cclns" ).val('');
+		 
+	  }
+	  else
+	  {
+
+		  $( "#txt_dp_ccl" ).prop( "readonly", '' );
+		  $( "#txt_dp_ccl" ).prop( "required", "required" );
+		  
+		  $( "#txt_dp_cclns" ).prop( "readonly", '' );
+		  $( "#txt_dp_cclns" ).prop( "required", "required" );
+		
+	  }
+  });
+  
+   $( "#cb_dis" ).change(function() {
+	   
+	   if($( "#cb_dis" ).val()=='')
+	   {
+		   $( "#txt_dis" ).prop( "readonly", 'readonly' );
+		   $( "#txt_dis" ).prop( "required", "" );
+		   $( "#txt_dis" ).val('');
+		   
+	   }
+	    else if($( "#cb_dis" ).val()=='V')
+	  	{
+		   $( "#txt_dis" ).prop( "readonly", '' );
+		   $( "#txt_dis" ).prop( "required", "required" );
+		   
+		    $("#txt_dis").inputmask({
+			'alias': 'currency',
+			rightAlign: true,
+			'prefix' : '',
+			'suffix': '',
+			'radixPoint': ',',
+			'groupSeparator': '.',
+			'autoGroup': true
+		  	});
+	  	}
+		else
+		{
+			$( "#txt_dis" ).prop( "readonly", '' );
+		   $( "#txt_dis" ).prop( "required", "required" );
+		   
+			 $("#txt_dis").inputmask({
+			'alias': 'decimal',
+			rightAlign: true,
+			'groupSeparator': '.',
+			'autoGroup': true
+		  	});
+		}
+	 });   
+	 
+	 
+	   $( "#cb_disum" ).change(function() {
+	   
+	   if($( "#cb_disum" ).val()=='')
+	   {
+		   $( "#txt_disum" ).prop( "readonly", 'readonly' );
+		   $( "#txt_disum" ).prop( "required", "" );
+		   $( "#txt_disum" ).val('');
+		   
+	   }
+	    else if($( "#cb_disum" ).val()=='V')
+	  	{
+		   $( "#txt_disum" ).prop( "readonly", '' );
+		   $( "#txt_disum" ).prop( "required", "required" );
+		   
+		    $("#txt_disum").inputmask({
+			'alias': 'currency',
+			rightAlign: true,
+			'prefix' : '',
+			'suffix': '',
+			'radixPoint': ',',
+			'groupSeparator': '.',
+			'autoGroup': true
+		  	});
+	  	}
+		else
+		{
+			$( "#txt_disum" ).prop( "readonly", '' );
+		   $( "#txt_disum" ).prop( "required", "required" );
+		   
+			 $("#txt_disum").inputmask({
+			'alias': 'decimal',
+			rightAlign: true,
+			'groupSeparator': '.',
+			'autoGroup': true
+		  	});
+		}
+	 });   
+
+	
+	 $('input[name="txt_tgl_trans"]').daterangepicker({
+        singleDatePicker: true,
+        showDropdowns: true,
+		autoUpdateInput: false/*,
+		 locale: {
+            format: 'DD/MM/YYYY'
+        }*/
+    });
+	
+	$('input[name="txt_tgl_trans"]').on('apply.daterangepicker', function(ev, picker) {
+      $(this).val(picker.startDate.format('DD/MM/YYYY'));
+  });
+  
+ $('input[name="txt_tgl_jtdp"]').daterangepicker({
+        singleDatePicker: true,
+        showDropdowns: true,
+		autoUpdateInput: false/*,
+		 locale: {
+            format: 'DD/MM/YYYY'
+        }*/
+    });
+	
+	$('input[name="txt_tgl_jtdp"]').on('apply.daterangepicker', function(ev, picker) {
+      $(this).val(picker.startDate.format('DD/MM/YYYY'));
+  });
+/*--------------------------- Form SPR Standard -----------------------------*/  		
+ });	
+
+</script>
+<?php
+if(!empty($sprf))
+{
+?>
+<script type="text/javascript">
+/*--------------------------- Form SPR Fitur -----------------------------*/
+  $(document).ready(function() {
+	  
+	  if($( "#cb_byrf" ).val()=='T')
+	  {
+
+		   $( "#txt_cclf" ).prop( "readonly", 'readonly' );
+		   $( "#txt_cclf" ).prop( "required", "" );
+		   $( "#txt_cclf" ).val('');
+		   
+		   $( "#txt_dp_cclnf" ).prop( "readonly", 'readonly' );
+		   $( "#txt_dp_cclnf" ).prop( "required", "" );
+		   $( "#txt_dp_cclnf" ).val('');
+		 
+	  }
+	  else
+	  {
+		  $( "#txt_dp_cclnf" ).prop( "readonly", '' );
+		  $( "#txt_dp_cclnf" ).prop( "required", "required" );
+		   
+		  $( "#txt_cclf" ).prop( "readonly", '' );
+		  $( "#txt_cclf" ).prop( "required", "required" );
+	  }
+	  
+$( "#btn_update_sprf" ).click(function() {
+
+	$('#form3').parsley().validate();
+
+});
+ $('input[name="txt_tgl_jtf"]').daterangepicker({
+        singleDatePicker: true,
+        showDropdowns: true,
+		autoUpdateInput: false/*,
+		 locale: {
+            format: 'DD/MM/YYYY'
+        }*/
+    });
+	
+	window.Parsley.addValidator('maxcclf', {
+  validateString: function(value) {
+	  //alert(value.substring(0, 2));
+    return value <= 10;
+  },
+  messages: {
+    en: 'Cicilan tidak boleh lebih dari 10 kali'
+  }
+});	  
+
+	$('input[name="txt_tgl_jtf"]').on('apply.daterangepicker', function(ev, picker) {
+      $(this).val(picker.startDate.format('DD/MM/YYYY'));
+  });
+  
+
+window.Parsley.addValidator('jtempof', {
+  validateString: function(value) {
+	  //alert(value.substring(0, 2));
+    return value.substring(0, 2) === '14' || value.substring(0, 2) === '28';
+  },
+  messages: {
+    en: 'Jatuh tempo harus  tanggal 14 atau 28'
+  }
+});
+
+if($( "#cb_disf" ).val()=='')
+	   {
+		   $( "#txt_disf" ).prop( "readonly", 'readonly' );
+		   $( "#txt_disf" ).prop( "required", "" );
+		   
+	   }
+	   
+$( "#cb_byrf" ).change(function() {
+	  if($( "#cb_byrf" ).val()=='T')
+	  {
+		  $( "#txt_cclf" ).prop( "readonly", 'readonly' );
+		  $( "#txt_cclf" ).prop( "required", "" );
+		  $( "#txt_cclf" ).val('');
+	  }
+	  else
+	  {
+		  $( "#txt_cclf" ).prop( "readonly", '' );
+		  $( "#txt_cclf" ).prop( "required", "required" );
+	  }
+});
+
+ $( "#cb_disf" ).change(function() {
+	   
+	   if($( "#cb_disf" ).val()=='')
+	   {
+		   $( "#txt_disf" ).prop( "readonly", 'readonly' );
+		   $( "#txt_disf" ).prop( "required", "" );
+		   $( "#txt_disf" ).val('');
+		   
+	   }
+	    else if($( "#cb_disf" ).val()=='V')
+	  	{
+		   $( "#txt_disf" ).prop( "readonly", '' );
+		   $( "#txt_disf" ).prop( "required", "required" );
+		   
+		    $("#txt_disf").inputmask({
+			'alias': 'currency',
+			rightAlign: true,
+			'prefix' : '',
+			'suffix': '',
+			'radixPoint': ',',
+			'groupSeparator': '.',
+			'autoGroup': true
+		  	});
+	  	}
+		else
+		{
+			$( "#txt_disf" ).prop( "readonly", '' );
+		   $( "#txt_disf" ).prop( "required", "required" );
+		   
+			 $("#txt_disf").inputmask({
+			'alias': 'decimal',
+			rightAlign: true,
+			'groupSeparator': '.',
+			'autoGroup': true
+		  	});
+		}
+	 });   
+
+	  });	 
+
+/*--------------------------- Form SPR Fitur -----------------------------*/		
+</script>
+<?php
+}
+?>
+
+<?php
+if($row_sprh->byttp > 0)
+{
+?>
+<script type="text/javascript">
+
+  $(document).ready(function() {
+	  
+	  if($( "#cb_byrb" ).val()=='T')
+	  {
+	
+		   $( "#txt_cclb" ).prop( "readonly", 'readonly' );
+		   $( "#txt_cclb" ).prop( "required", "" );
+		   $( "#txt_cclb" ).val('');
+		   
+		   $( "#txt_dp_cclnb" ).prop( "readonly", 'readonly' );
+		   $( "#txt_dp_cclnb" ).prop( "required", "" );
+		   $( "#txt_dp_cclnb" ).val('');
+		 
+	  }
+	  else
+	  {
+		  $( "#txt_dp_cclnb" ).prop( "readonly", '' );
+		  $( "#txt_dp_cclnb" ).prop( "required", "required" );
+		   
+		  $( "#txt_cclb" ).prop( "readonly", '' );
+		  $( "#txt_cclb" ).prop( "required", "required" );
+	  }
+	  
+$( "#btn_update_sprb" ).click(function() {
+
+	$('#form4').parsley().validate();
+
+});
+ $('input[name="txt_tgl_jtb"]').daterangepicker({
+        singleDatePicker: true,
+        showDropdowns: true,
+		autoUpdateInput: false/*,
+		 locale: {
+            format: 'DD/MM/YYYY'
+        }*/
+    });
+	
+	window.Parsley.addValidator('maxcclb', {
+  validateString: function(value) {
+	  //alert(value.substring(0, 2));
+    return value <= 10;
+  },
+  messages: {
+    en: 'Cicilan tidak boleh lebih dari 10 kali'
+  }
+});	  
+
+	$('input[name="txt_tgl_jtb"]').on('apply.daterangepicker', function(ev, picker) {
+      $(this).val(picker.startDate.format('DD/MM/YYYY'));
+  });
+  
+
+window.Parsley.addValidator('jtempob', {
+  validateString: function(value) {
+	  //alert(value.substring(0, 2));
+    return value.substring(0, 2) === '14' || value.substring(0, 2) === '28';
+  },
+  messages: {
+    en: 'Jatuh tempo harus  tanggal 14 atau 28'
+  }
+});
+
+if($( "#cb_disb" ).val()=='')
+	   {
+		   $( "#txt_disb" ).prop( "readonly", 'readonly' );
+		   $( "#txt_disb" ).prop( "required", "" );
+		   
+	   }
+	   
+$( "#cb_byrb" ).change(function() {
+	  if($( "#cb_byrb" ).val()=='T')
+	  {
+		  $( "#txt_cclb" ).prop( "readonly", 'readonly' );
+		  $( "#txt_cclb" ).prop( "required", "" );
+		  $( "#txt_cclb" ).val('');
+	  }
+	  else
+	  {
+		  $( "#txt_cclb" ).prop( "readonly", '' );
+		  $( "#txt_cclb" ).prop( "required", "required" );
+	  }
+});
+
+ $( "#cb_disb" ).change(function() {
+	   
+	   if($( "#cb_disb" ).val()=='')
+	   {
+		   $( "#txt_disb" ).prop( "readonly", 'readonly' );
+		   $( "#txt_disb" ).prop( "required", "" );
+		   $( "#txt_disb" ).val('');
+		   
+	   }
+	    else if($( "#cb_disb" ).val()=='V')
+	  	{
+		   $( "#txt_disb" ).prop( "readonly", '' );
+		   $( "#txt_disb" ).prop( "required", "required" );
+		   
+		    $("#txt_disb").inputmask({
+			'alias': 'currency',
+			rightAlign: true,
+			'prefix' : '',
+			'suffix': '',
+			'radixPoint': ',',
+			'groupSeparator': '.',
+			'autoGroup': true
+		  	});
+	  	}
+		else
+		{
+			$( "#txt_disb" ).prop( "readonly", '' );
+		   $( "#txt_disb" ).prop( "required", "required" );
+		   
+			 $("#txt_disb").inputmask({
+			'alias': 'decimal',
+			rightAlign: true,
+			'groupSeparator': '.',
+			'autoGroup': true
+		  	});
+		}
+	 });   
+
+	  });	 
+
+/*--------------------------- Form SPR Biaya Biaya Titipan -----------------------------*/		
+</script>
+<?php
+}
+?>
+
+

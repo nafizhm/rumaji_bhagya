@@ -1,0 +1,114 @@
+<?php
+/*
+if($this->uri->segment(4) == 4 || $this->uri->segment(4) == 8 || $this->uri->segment(4) == 9)
+{
+	$pt = 'PT. Mitra Bangun Samaji';
+}
+else
+{
+	$pt = 'PT. Karsa Samana Imaji';
+}*/
+//$pt = $this->lib->get_pt($this->uri->segment(4));
+?>
+<style type="text/css">
+  hr {
+    border: none;
+    height: 1px;
+    /* Set the hr color */
+    color: #333;
+    /* old IE */
+    background-color: #333;
+    /* Modern Browsers */
+  }
+
+  body,
+  td,
+  th {
+    font-size: 12px;
+  }
+</style>
+<table width="100%" border="0">
+  <tr>
+    <td width="20%"><img src="<?php echo $this->config->item('assets'); ?>/img/logo.jpg" alt="" /></td>
+    <td align="center" width="40%">
+      <h1><u>BUKTI BANK MASUK</u></h1>
+      <h2><?= $nama_project; ?> </h2>
+    </td>
+    <td width="20%">
+        <table width="100%" border="1" bordercolor="#000000" cellpadding="2" cellspacing="0">
+          <tr>
+            <th width="50%" align="center"><div>No.</div><br></th>
+            <th width="100%" align="center"><div>BM</div><br></th>
+            <th width="100%" align="center"></th>
+            <th width="100%" align="center"></th>
+          </tr>
+<?php
+$tgltemp='';
+foreach ($query->result() as $row) {
+  $tgltemp=$row->tgl;
+} ?>
+
+          <tr>
+            <td width="50%" align="center"><div>Tgl.</div><br></td>
+            <td colspan="3" align="center"><div><?php echo  $tgltemp ?></div><br></td>
+          </tr>
+        </table> 
+    </td>
+  </tr>
+</table>
+<br />
+<table width="100%" border="1" cellpadding="2" cellspacing="0" bordercolor="#000000">
+  <tr>
+    <th width="4%" align="center">NO</th>
+    <th width="4%" align="center">NO. SPR</th>
+    <th width="4%" align="center">NO. KWITANSI</th>
+    <th width="29%" align="center">KONSUMEN</th>
+    <th width="29%" align="center">KETERANGAN</th>
+    <th width="10%" align="center">JUMLAH</th>
+  </tr>
+  <?php
+  $no = 0;
+  $total = 0;
+  foreach ($query->result() as $row) {
+    $total = $total + $row->total;
+  ?>
+    <tr>
+      <td align="center"><?= ++$no; ?></td>
+      <td align="center"><?= $this->lib->no_spr($row->sprno); ?></td>
+      <td align="center"><?= $this->lib->no_kwt($row->kwtno); ?></td>
+      <td><?= $this->lib->no_kwt($row->nama).' Blok '.$row->blok.'-'.$row->no; ?></td>
+      <td><?= $row->ket; ?></td>
+      <td align="right"><?= $this->lib->format_idr($row->total); ?></td>
+    </tr>
+  <?php } ?>
+  <tr>
+    <td>&nbsp;</td>
+    <td colspan="4" align="right"><strong>TOTAL</strong></td>
+    <td align="right"><b><?= $this->lib->format_idr($total); ?></b></td>
+  </tr>
+</table>
+<br />
+<br />
+<table width="100%" height="114" border="0">
+  <tr>
+    <td width="35%" align="center" valign="top">Dibuat,<br />
+      <br />
+      <br />
+      <br />
+      <br />
+      ( ____________________ )</td>
+    <td width="33%" align="center" valign="top">Diperiksa,<br />
+      <br />
+      <br />
+      <br />
+      <br />
+      ( ____________________ )</td>
+    <td width="32%" align="center" valign="top">Disetujui,<br />
+      <br />
+      <br />
+      <br />
+      <br />
+      ( ____________________ )
+    </td>
+  </tr>
+</table>

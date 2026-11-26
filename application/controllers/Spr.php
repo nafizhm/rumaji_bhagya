@@ -1,0 +1,1801 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class Spr extends CI_Controller {
+
+	/**
+	 * Index Page for this controller.
+	 *
+	 * Maps to the following URL
+	 * 		http://example.com/index.php/welcome
+	 *	- or -
+	 * 		http://example.com/index.php/welcome/index
+	 *	- or -
+	 * Since this controller is set as the default controller in
+	 * config/routes.php, it's displayed at http://example.com/
+	 *
+	 * So any other public methods not prefixed with an underscore will
+	 * map to /index.php/welcome/<method_name>
+	 * @see https://codeigniter.com/user_guide/general/urls.html
+	 */
+	 
+	   /* Insialiasi otorisasi */
+	 var $moid = 'PJ';
+	 var $mid = 'T001';
+	 var $mid2 = 'R001';
+	 
+	function __construct()
+	{
+		parent::__construct();
+		$this->lib->check_login();
+		$this->load->model('mod_spr', '', TRUE);
+		$this->load->model('mod_kav', '', TRUE);
+		$this->load->model('mod_hrgf', '', TRUE);
+		$this->load->model('mod_kwt', '', TRUE);
+	}
+	
+	public function index()
+	{
+		$this->pick_proj();
+	}
+	
+	function print_kpr()
+	{
+	$sprh = $this->mod_spr->get_sprh($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprh'] = $sprh;	
+	
+	
+	$sprp = $this->mod_spr->get_sprp($this->uri->segment(3),$this->uri->segment(4),'UMT')->result();
+	$data['sprp'] = $sprp;	
+	
+	$filename = 'PENURUNAN_KPR_'.$this->lib->no_spr($this->uri->segment(3)).'-'.$this->uri->segment(4);
+	$this->load->library('pdf');
+    $this->pdf->load_view('print_kpr',$data,$filename);
+	}
+
+	function do_input_kpr()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+		
+		$sql_kpr = $this->db->query("SELECT sum(total) as total_kpr FROM `tkwt` 
+		WHERE `projid` =  '".$this->input->post('txt_kpr_proj')."' AND `sprno` = '".$this->input->post('txt_kpr_sprno')."'
+		AND  btl <> '1' AND tipe IN ('UMT')");
+		foreach( $sql_kpr->result()  as $row_kpr);
+		
+		if($row_kpr->total_kpr > 0)
+		{
+			$this->session->set_flashdata('error', 'Tidak bisa ubah data penurunan KPR, mohon batalkan semua kwitansi penurunan KPR dulu');
+    	redirect('spr/edit_spr/'.$this->input->post('txt_kpr_sprno').'/'.$this->input->post('txt_kpr_proj'));
+		}
+		else
+		{
+			$sql_del_sprp = "DELETE FROM tsprp WHERE tipe IN ('UMT') AND sprno =  '".$this->input->post('txt_kpr_sprno')."' 
+		AND projid = '".$this->input->post('txt_kpr_proj')."'";
+		$this->db->query($sql_del_sprp);	
+		}
+		
+	
+		$umt = $this->lib->convert_idr_to_num($this->input->post('txt_umt'));
+		$umtcclns = $this->lib->convert_idr_to_num($this->input->post('txt_umt_cclns'));
+		$jttmp = $this->lib->conv_date_to_int($this->input->post('txt_tgl_jtumt'));
+		$jttmp2 = $this->lib->conv_date_to_int($this->input->post('txt_tgl_jtumt'));
+		
+		$sprh = array( 
+						'umt' => $umt,
+						'umtbyr' => $this->input->post('cb_byr_umt'),
+						'umtcclns' => $umtcclns,
+						'umtccl' => $this->input->post('txt_umt_ccl'),
+						'chby' => $this->session->userdata('userid'),
+						'chdat' => date('Y-m-d')
+						);
+		
+		if($this->input->post('cb_byr_umt') == 'T')
+		{
+			$sprp[] = array( 
+						'sprno' => $this->input->post('txt_kpr_sprno'),
+						'projid' => $this->input->post('txt_kpr_proj'),
+						'tipe' => 'UMT',
+						'ang' => 0,
+						'jtmp' => $jttmp,
+						'total' => $umt,
+						'status' => 'BLN'
+					);
+		}
+		else
+		{
+			if($umtcclns  > 0)
+			{
+				$cicilan = ($umt - $umtcclns) / ($this->input->post('txt_umt_ccl')-1);
+			}
+			else
+			{
+				$cicilan = $umt / $this->input->post('txt_umt_ccl');
+			}
+			
+			for ($i=1;$i<=$this->input->post('txt_umt_ccl');$i++) { 
+			
+				if($umtcclns  > 0)
+				{
+					if($i==$this->input->post('txt_umt_ccl'))
+					{
+						$cicilan = $umtcclns;
+					}
+				}
+				
+				if($i == 1)
+					{
+						$date=date_create($this->lib->conv_date_to_int($jttmp));
+					}
+					else
+					{	
+						
+						$date_tmp=date_create(date("Y-m-01",strtotime($this->lib->conv_date_to_int($jttmp2))));
+						date_add($date_tmp,date_interval_create_from_date_string("+1 months"));	
+						
+						if(date_format($date_tmp,"t") < date_format(date_create($this->lib->conv_date_to_int($jttmp)),"d"))
+						{ 
+						
+							$jttmp2 = date_format($date_tmp,"Y-m-t");
+							$date = date_create($this->lib->conv_date_to_int($jttmp2));
+						}
+						else
+						{
+							$date =date_create($this->lib->conv_date_to_int($jttmp2));
+							date_add($date,date_interval_create_from_date_string("+1 months"));
+						}
+						
+						$jttmp2 = date_format($date,"d/m/Y");
+					}
+					
+					$sprp[] = array( 
+						'sprno' => $this->input->post('txt_kpr_sprno'),
+						'projid' => $this->input->post('txt_kpr_proj'),
+						'tipe' => 'UMT',
+						'ang' => $i,
+						'jtmp' => date_format($date,"Y-m-d"),
+						'total' => $cicilan,
+						'status' => 'BLN'
+					);
+					
+					
+					
+			}
+		}
+		
+		$this->db->trans_start();	
+		$this->db->query($sql_del_sprp);
+		$this->mod_spr->input_sprp($sprp);
+		$this->mod_spr->update_sprh($this->input->post('txt_kpr_sprno'),$this->input->post('txt_kpr_proj'),$sprh);
+		$this->db->trans_complete();
+		
+		if ($this->db->trans_status() === FALSE)
+		{
+        	// generate an error... or use the log_message() function to log your error
+			$this->session->set_flashdata('error', 'Buat penurunan KPR gagal!');
+			redirect('spr/edit_spr/'.$this->input->post('txt_kpr_sprno').'/'.$this->input->post('txt_kpr_proj'));
+		}
+		else
+		{
+			$this->session->set_flashdata('ok', 'Buat penurunan KPR sukses');
+			redirect('spr/edit_spr/'.$this->input->post('txt_kpr_sprno').'/'.$this->input->post('txt_kpr_proj'));
+		}
+	
+	}
+	
+	function lap_ptn()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid2,'R');
+		
+		$data['form_action']= site_url('spr/do_laptn_disp');
+		$data['proj'] = $this->lib->generate_cb_proj($this->input->post('cb_proj'));
+		$data['main_title'] = 'Laporan';
+		$data['title'] = 'Laporan > Laporan Potensi';
+		
+		$this->load->view('frm_pick_proj',$data);
+	}
+	
+	function do_laptn_disp()
+	{
+		$projid = '';
+		
+		if($this->input->post('cb_proj') == '')
+		{
+			$projid = $this->uri->segment(3);
+		}
+		else
+		{
+			$projid = $this->input->post('cb_proj');
+		}
+		
+		foreach($this->mod_proj->edit_proj($projid)->result() as $row_proj );
+		$data['title'] = $row_proj->namproj;
+		
+		$sql_get_spr = $this->mod_spr->list_spr_ptn($projid)->result();
+		$data['list_spr'] = $sql_get_spr;
+		
+		$this->load->view('lap_ptn',$data);
+	}
+	
+	function pick_proj()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'R');
+		
+		$list_proj = $this->mod_proj->list_proj()->result();
+		$data['form_action']= site_url('spr/do_search_spr');
+		$data['proj'] = $this->lib->generate_cb_proj($this->input->post('cb_proj'));
+		$data['main_title'] = 'List SPR';
+		$data['title'] = 'Pilih Project';
+		$this->load->view('frm_pick_proj',$data);
+	}
+	
+	function do_search_spr()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'R');
+		$projid = '';
+		
+		if($this->input->post('cb_proj') == '')
+		{
+			$projid = $this->uri->segment(3);
+		}
+		else
+		{
+			$projid = $this->input->post('cb_proj');
+		}
+		
+		if (!$projid) {
+			redirect('spr/pick_proj');
+		}
+		$row_proj = $this->mod_proj->edit_proj($projid)->row();
+		if (!$row_proj) {
+			show_404();
+			return;
+		}
+		$data['title'] = $row_proj->namproj;
+		
+		$status = (string) $this->input->get('status');
+		$status = in_array($status, array('proses', 'batal'), TRUE) ? $status : '';
+		$search = trim((string) $this->input->get('q'));
+		$per_page = (int) $this->input->get('per_page');
+		$per_page = in_array($per_page, array(25, 50, 100), TRUE) ? $per_page : 25;
+		$summary = $this->mod_spr->summary_spr_list($projid, $search);
+		$total = (int) ($status === '' ? $summary->total : $summary->{$status});
+		$pages = max(1, (int) ceil($total / $per_page));
+		$page = min($pages, max(1, (int) $this->input->get('page')));
+		$offset = ($page - 1) * $per_page;
+		$data['projid'] = $projid;
+		$data['status_filter'] = $status;
+		$data['search'] = $search;
+		$data['per_page'] = $per_page;
+		$data['summary'] = $summary;
+		$data['total'] = $total;
+		$data['page'] = $page;
+		$data['pages'] = $pages;
+		$data['offset'] = $offset;
+		$data['list_url'] = site_url('spr/do_search_spr/' . rawurlencode($projid));
+		$data['page_query'] = array('status' => $status, 'q' => $search, 'per_page' => $per_page);
+		$sql_get_spr = $this->mod_spr->list_spr2($projid, $status, $per_page, $offset, $search)->result();
+		$data['list_spr'] = $sql_get_spr;
+		
+		$this->load->view('list_spr',$data);
+	}
+	
+	
+	function input_spr()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
+		if ($this->input->get('booking_id')) {
+			$booking=$this->db->get_where('tbooking',array('id'=>(int)$this->input->get('booking_id')))->row();
+			if (!$booking) { show_404();return; }
+			if ($booking->status==='SPR') { redirect('booking/admin');return; }
+			redirect('spr/input_spr2/'.rawurlencode($booking->projid).'/'.rawurlencode($booking->blok).'/'.rawurlencode($booking->no).'?booking_id='.$booking->id);return;
+		}
+		
+		$data['title'] = 'Tambah SPR > Pilih Stok Kavling';
+		$data['proj'] = $this->lib->generate_cb_proj($this->input->post('cb_proj'));
+		
+		
+		
+		$this->load->view('frm_spr1',$data);
+	}
+	
+	function get_lot()
+	{
+		$sql_get_lot = $this->mod_kav->get_lot_proj($this->input->post('projid'));
+		echo "<option value=''>Silahkan pilih</option>";
+		foreach( $sql_get_lot->result()  as $row)
+		{
+			echo "<option value='".$row->lot."'>".$row->lot."</option>";
+		}
+	}
+	
+	function get_kav()
+	{
+		
+		$sql_get_kav = $this->mod_kav->get_kav_proj($this->input->post('projid'),$this->input->post('lot'));
+		foreach( $sql_get_kav->result()  as $row)
+		{
+			$fitur = "";
+			$tothrgf = 0;
+			$hrgtot = 0;
+			$hrgstd = 0;
+			$sql_get_kavf = $this->mod_kav->list_kavf($this->input->post('projid'),$row->blok,$row->no);
+			foreach( $sql_get_kavf->result()  as $rowf)
+			{
+				if($rowf->ftid=='TLE')
+				{
+					$tothrgf = $tothrgf + $this->lib->get_hargaf($this->input->post('projid'),$rowf->ftid,'H') * $rowf->ltnh;
+					$fitur .= '<span class="label label-success ">'.$rowf->namfit.':'.$rowf->ltnh.'</span></br>';
+				}
+				else
+				{
+					$tothrgf = $tothrgf + $this->lib->get_hargaf($this->input->post('projid'),$rowf->ftid,'H');
+					$fitur .= '<span class="label label-success ">'.$rowf->namfit.'</span></br>';
+				}
+			}
+			$hrgstd = $this->lib->get_harga($this->input->post('projid'),$row->lot,$row->tipe,'H');
+			$hrgtot = $hrgtot + ($tothrgf + $hrgstd);
+			if($hrgstd == 0)
+			{
+				$disable = 'disabled';
+			}
+			else
+			{
+				$disable = '';
+			}
+			$data["data"][] = array( 
+						'blok' =>$row->blok.$row->no,
+						'ltstd' =>$row->ltstd,
+						'tipe' =>$row->tipe,
+						'fitur' =>$fitur,
+						'hargastd' =>$this->lib->format_idr($hrgstd),
+						'hargaft' =>$this->lib->format_idr($tothrgf),
+						'hargatot' =>$this->lib->format_idr($hrgtot),
+						'pilihan' =>'<a href="'.site_url('spr/input_spr2/'.$row->projid.'/'. $row->blok.'/'. $row->no).'" class="btn btn-primary '.$disable.'"><i class="fa fa-calculator"></i> Buat SPR</a>'
+						
+						);
+						
+		}
+		
+		echo json_encode($data);
+		
+	}
+	
+function input_spr2()
+{
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
+	
+	$data['title'] = 'Tambah SPR > Input Data Konsumen & Pembayaran';
+	$data['form_action'] = site_url('spr/do_input_spr');	
+	$data['url_back'] = site_url('spr/input_spr');	
+	
+	$stok_kav = $this->mod_kav->get_kav_spr($this->uri->segment(3),$this->uri->segment(4),$this->uri->segment(5))->result();
+	$data['stok_kav'] = $stok_kav;	
+	
+	$stok_kavf = $this->mod_kav->list_kavf($this->uri->segment(3),$this->uri->segment(4),$this->uri->segment(5))->result();
+	$data['stok_kavf'] = $stok_kavf;	
+	
+	if ($this->input->get('booking_id')) {
+		$booking=$this->db->get_where('tbooking',array('id'=>(int)$this->input->get('booking_id'),'projid'=>$this->uri->segment(3),'blok'=>$this->uri->segment(4),'no'=>$this->uri->segment(5)))->row();
+		if (!$booking || $booking->status==='SPR') { show_error('Booking tidak tersedia untuk dibuat SPR.',409);return; }
+		$data['booking_source']=$booking;
+	}
+	$this->load->view('frm_spr2',$data);
+}
+
+function check_spr()
+{
+	$stok_kav = $this->mod_kav->get_kav_spr($this->input->post('txt_projid'),$this->input->post('txt_blok'),$this->input->post('txt_no'))->result();
+	$data['stok_kav'] = $stok_kav;	
+	
+	$stok_kavf = $this->mod_kav->list_kavf($this->input->post('txt_projid'),$this->input->post('txt_blok'),$this->input->post('txt_no'))->result();
+	$data['stok_kavf'] = $stok_kavf;
+
+
+	$data['chk_ppn'] = $this->input->post('chk_ppn');
+
+	
+	$data['nama'] = $this->input->post('txt_nama');
+	$data['ktp'] = $this->input->post('txt_ktp');
+	$data['npwp'] = $this->input->post('txt_npwp');
+	$data['alm'] = $this->input->post('txt_alm');
+	$data['telp'] = $this->input->post('txt_telp');
+	$data['telp2'] = $this->input->post('txt_telp2');
+	$data['email'] = $this->input->post('txt_email');
+	
+	$data['cb_dis'] = $this->input->post('cb_dis');
+	if($this->input->post('cb_dis')=='V')
+	{
+		$data['dis'] = $this->lib->convert_idr_to_num($this->input->post('txt_dis'));
+	}
+	elseif($this->input->post('cb_dis')=='P')
+	{
+		$data['dis'] = $this->input->post('txt_dis');
+	}
+	else
+	{
+		$data['dis'] = 0;
+	}
+	
+	$data['cb_disum'] = $this->input->post('cb_disum');
+	if($this->input->post('cb_disum')=='V')
+	{
+		$data['disum'] = $this->lib->convert_idr_to_num($this->input->post('txt_disum'));
+	}
+	elseif($this->input->post('cb_disum')=='P')
+	{
+		$data['disum'] = $this->input->post('txt_disum');
+	}
+	else
+	{
+		$data['disum'] = 0;
+	}
+	
+	$data['bkf'] = $this->lib->convert_idr_to_num($this->input->post('txt_bkf'));
+	$data['um'] = $this->lib->convert_idr_to_num($this->input->post('txt_dp'));
+	$data['dp'] = $this->lib->convert_idr_to_num($this->input->post('txt_dp')) - $data['disum']; //UM - Diskon UM
+	$data['cb_byr'] = $this->input->post('cb_byr');
+	$data['dp_ccl'] = $this->input->post('txt_dp_ccl');
+	
+	$data['tgl_jtdp'] = $this->input->post('txt_tgl_jtdp');
+	$data['kpr_ccl'] = $this->input->post('txt_kpr_ccl');
+	
+	$data['cclns'] = $this->lib->convert_idr_to_num($this->input->post('txt_dp_cclns'));
+	
+	$stok_kavf = $this->mod_kav->list_kavf($this->input->post('txt_projid'),$this->input->post('txt_blok'),$this->input->post('txt_no'))->result();
+	$data['stok_kavf'] = $stok_kavf;	
+	
+	$data['cb_disf'] = $this->input->post('cb_disf');
+	if($this->input->post('cb_disf')=='V')
+	{
+		$data['disf'] = $this->lib->convert_idr_to_num($this->input->post('txt_disf'));
+	}
+	elseif($this->input->post('cb_disf')=='P')
+	{
+		$data['disf'] = $this->input->post('txt_disf');
+	}
+	else
+	{
+		$data['disf'] = 0;
+	}
+	
+	$data['cb_byrf'] = $this->input->post('cb_byrf');
+	if($this->input->post('txt_cclf') == '')
+	{
+		$data['cclf'] = 0;
+	}
+	else
+	{
+		$data['cclf'] = $this->input->post('txt_cclf');
+	}
+	$data['tgl_jtf'] = $this->input->post('txt_tgl_jtf');
+	
+	$data['cclnf'] = $this->lib->convert_idr_to_num($this->input->post('txt_dp_cclnf'));
+	
+	
+	$data['cb_disb'] = $this->input->post('cb_disb');
+	if($this->input->post('cb_disb')=='V')
+	{
+		$data['disb'] = $this->lib->convert_idr_to_num($this->input->post('txt_disb'));
+	}
+	elseif($this->input->post('cb_disb')=='P')
+	{
+		$data['disb'] = $this->input->post('txt_disb');
+	}
+	else
+	{
+		$data['disb'] = 0;
+	}
+	
+	$data['cb_byrb'] = $this->input->post('cb_byrb');
+	if($this->input->post('txt_cclb') == '')
+	{
+		$data['cclb'] = 0;
+	}
+	else
+	{
+		$data['cclb'] = $this->input->post('txt_cclb');
+	}
+	$data['tgl_jtb'] = $this->input->post('txt_tgl_jtb');
+	
+	$data['jenis'] = $this->input->post('rd_jenis');
+	
+
+
+	$data['cclnb'] = $this->lib->convert_idr_to_num($this->input->post('txt_dp_cclnb'));
+	
+
+	$sql_slsman = $this->db->query("SELECT kodeslsman,namaslsman 
+	from msalesman where kodeslsman = '". $this->input->post('cb_slsman') ."' ");
+	foreach( $sql_slsman->result()  as $row_slsman);
+
+	$data['salesman'] = $row_slsman->kodeslsman . ' - ' . $row_slsman->namaslsman;	
+
+
+	$this->load->view('frm_check_spr',$data);
+}
+
+function do_input_spr()
+{
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
+	$booking_source=NULL;
+	if ($this->input->post('booking_id')) {
+		$booking_source=$this->db->get_where('tbooking',array('id'=>(int)$this->input->post('booking_id'),'projid'=>$this->input->post('txt_projid'),'blok'=>$this->input->post('txt_blok'),'no'=>$this->input->post('txt_no')))->row();
+		if (!$booking_source || $booking_source->status==='SPR') { show_error('Booking tidak tersedia untuk dibuat SPR.',409);return; }
+	}
+	//Check apakah stok kavling yang dibuat spr statusnya belum laku ?untuk mencegah double input
+	$query = $this->db->query("SELECT * FROM `mkav` 
+	WHERE projid = '".$this->input->post('txt_projid')."'
+	AND blok = '".$this->input->post('txt_blok')."'
+	AND no = '".$this->input->post('txt_no')."'
+	AND status = 'SPR'");
+	if($query->num_rows() > 0)
+	{
+		$this->session->set_flashdata('error', 'Buat SPR gagal karena stok kavling sudah dibuat SPR!');
+		redirect('spr/do_search_spr/'.$this->input->post('txt_projid'));
+	}
+	$sprno = $this->lib->get_no($this->input->post('txt_projid'),'SPR');
+/* ------------------------------- INPUT SPR STANDARD ------------------------------ */	
+	if($this->input->post('cb_dis') == 'V')
+	{
+		$dis = $this->lib->convert_idr_to_num($this->input->post('txt_dis'));
+	}
+	elseif ($this->input->post('cb_dis') == 'P')
+	{
+		$dis = $this->input->post('txt_dis');
+	}
+	else
+	{
+		$dis = 0;
+	}
+	
+	if($this->input->post('cb_disum') == 'V')
+	{
+		$disum = $this->lib->convert_idr_to_num($this->input->post('txt_disum'));
+		$umtot = $this->input->post('txt_umk') - $disum;
+	}
+	elseif ($this->input->post('cb_disum') == 'P')
+	{
+		$disum = $this->input->post('txt_disum');
+		$umtot = $this->input->post('txt_umk') - (($disum / 100) * $this->input->post('txt_umk'));
+	}
+	else
+	{
+		$disum = 0;
+		$umtot = $this->input->post('txt_umk');
+	}
+	
+	$sprh = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'blok' => $this->input->post('txt_blok'),
+						'no' => $this->input->post('txt_no'),
+						'nama' =>  $this->input->post('txt_nama'),
+						'ktp' => $this->input->post('txt_ktp'),
+						'npwp' => $this->input->post('txt_npwp'),
+						'alm' => $this->input->post('txt_alm'),
+						'telp' => $this->input->post('txt_telp'),
+						'telp2' => $this->input->post('txt_telp2'),
+						'email' => $this->input->post('txt_email'),
+						'hrgstd' => $this->input->post('txt_hrgstd'),
+						'byttp' => $this->input->post('txt_byttp'),
+						'tglhrg' => $this->input->post('txt_hrg_tgl'),
+						'distp' => $this->input->post('cb_dis'),
+						'dis' => $dis,
+						'hrgtot' => $this->input->post('txt_hrgtot'),
+						'utj' => $this->input->post('txt_utj'),
+						'umk' => $this->input->post('txt_umk'),
+						'umdis' => $disum,
+						'umdistp' => $this->input->post('cb_disum'),
+						'umtot' => $umtot,
+						'cclns' => $this->input->post('txt_cclns'),
+						'umbyr' => $this->input->post('txt_umbyr'),
+						'umccl' => $this->input->post('txt_umccl'),
+						'kpr' => $this->input->post('txt_kpr'),
+						'kpr_ccl' => $this->input->post('txt_kpr_ccl'),
+						'ppn' => $this->input->post('txt_ppn'),
+						'status' => 'PRO',
+						'crby' => $this->session->userdata('userid'),
+						//'crdat' => date('Y-m-d')
+						'kodeslsman' => $this->input->post('cb_slsman'),
+						'crdat' => $this->lib->conv_date_to_int($this->input->post('txt_tgl_trans'))
+						);
+	
+	
+	$sprp[] = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'tipe' => 'UTJ',
+						'ang' => 0,
+						//'jtmp' => date('Y-m-d'),
+						'jtmp' => $this->lib->conv_date_to_int($this->input->post('txt_tgl_trans')),
+						'total' => $this->input->post('txt_utj'),
+						'status' => 'BLN'
+					);
+	
+	if($this->input->post('txt_umbyr') == 'T')
+	{
+		$sprp[] = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'tipe' => 'UMK',
+						'ang' => 0,
+						'jtmp' => $this->lib->conv_date_to_int($this->input->post('txt_tgl_jtdp')),
+						'total' => ($umtot - $this->input->post('txt_utj')), //+ $this->input->post('txt_byttp'),
+						'status' => 'BLN'
+					);
+	}
+	
+	$ccl =  $this->input->post('txt_ccl');
+	$tglccl =  $this->input->post('txt_tgl_ccl');
+	
+	foreach($this->input->post('txt_ang') as $key => $ang)
+	{
+		$sprp[] = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'tipe' => 'UMK',
+						'ang' => $ang,
+						'jtmp' => $this->lib->conv_date_to_int($tglccl[$key]),
+						'total' => $ccl[$key],
+						'status' => 'BLN'
+					);
+	}
+	
+	
+//bams 13-04-2025
+		$myppn = (int) $this->input->post('txt_ppn');
+		$myjenis = 'Subsidi';
+		if ($myppn > 0) {
+			$myjenis = 'Komersial';
+		}
+//bams 13-04-2025
+
+		$kav = array( 
+			'status' => 'SPR',
+			'jenis' => $myjenis
+		);
+
+
+	// $kav = array( 
+	// 					'status' => 'SPR',
+	// 					'jenis' => $this->input->post('rd_jenis')
+	// 				);
+					
+	$kavlog = array( 
+						'projid' => $this->input->post('txt_projid'),
+						'blok' => $this->input->post('txt_blok'),
+						'no' => $this->input->post('txt_no'),
+						'status' => 'SPR',
+						'sprno' => $sprno,
+						'ket' => 'SISTEM',
+						'crby' => $this->session->userdata('userid'),
+						'crdat' => date('Y-m-d'),
+						'crtim' => $this->lib->get_time()
+					);
+
+	$this->db->trans_start();	
+	/* ------------------------------- INPUT SPR FITUR ------------------------------ */	
+	if ($booking_source) {
+		$locked_booking=$this->db->query('SELECT status FROM tbooking WHERE id=? FOR UPDATE',array($booking_source->id))->row();
+		if (!$locked_booking || $locked_booking->status==='SPR') {
+			$this->db->trans_rollback();show_error('Booking sudah dibuat SPR. Muat ulang daftar booking.',409);return;
+		}
+	}
+	if($this->input->post('txt_hrgtotf') != '')
+	{
+	
+		if($this->input->post('cb_disf') == 'V')
+		{
+			$disf = $this->lib->convert_idr_to_num($this->input->post('txt_disf'));
+		}
+		elseif ($this->input->post('cb_disf') == 'P')
+		{
+			$disf = $this->input->post('txt_disf');
+		}
+		else
+		{
+			$disf = 0;
+		}
+	
+	$sprf = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						/*'blok' => $this->input->post('txt_blok'),
+						'no' => $this->input->post('txt_no'),*/
+						'hrgtotf' => $this->input->post('txt_hrgtotf'),
+						'disftp' => 	$this->input->post('cb_disf'),
+						'disf' => $disf,
+						'hrgtotalf' => $this->input->post('txt_totall_hrgf'),
+						'fbyr' => $this->input->post('txt_fbyr'),
+						'fccl' => $this->input->post('txt_cclf'),
+						'cclnf' => $this->input->post('txt_cclnf'),
+						);
+	
+	$ltnh =  $this->input->post('txt_ltnh');
+	$hrgf =  $this->input->post('txt_hrgf');
+	$tgl_hrgf =  $this->input->post('txt_tgl_hrgf');
+	
+	foreach($this->input->post('txt_ftid') as $key => $ft)
+	{
+		$sprf_h[] = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						/*'blok' => $this->input->post('txt_blok'),
+						'no' => $this->input->post('txt_no'),*/
+						'ftid' => $ft,
+						'hrg' => $hrgf[$key],
+						'tglhrg' => $tgl_hrgf[$key],
+						'ltnh' => $ltnh[$key]
+					);
+	}
+	
+	if($this->input->post('txt_fbyr') == 'T')
+	{
+		$sprp[] = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'tipe' => 'UFT',
+						'ang' => 0,
+						'jtmp' => $this->lib->conv_date_to_int($this->input->post('txt_tgl_jtf')),
+						'total' => $this->input->post('txt_totall_hrgf'),
+						'status' => 'BLN'
+					);
+	}
+	
+	$cclf =  $this->input->post('txt_cclf2');
+	$tglcclf =  $this->input->post('txt_tgl_cclf');
+	
+	foreach($this->input->post('txt_angf') as $key => $angf)
+	{
+		$sprp[] = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'tipe' => 'UFT',
+						'ang' => $angf,
+						'jtmp' => $this->lib->conv_date_to_int($tglcclf[$key]),
+						'total' => $cclf[$key],
+						'status' => 'BLN'
+					);
+	}
+	
+	$this->mod_spr->input_sprf_h($sprf_h);
+	$this->mod_spr->input_sprf($sprf);
+	
+	}
+	
+	/* ------------------------------- INPUT SPR BIAYA BIAYA TITIPAN ------------------------------ */	
+	if($this->input->post('txt_totall_hrgb') != '')
+	{
+	
+		if($this->input->post('cb_disb') == 'V')
+		{
+			$disb = $this->lib->convert_idr_to_num($this->input->post('txt_disb'));
+		}
+		elseif ($this->input->post('cb_disb') == 'P')
+		{
+			$disb = $this->input->post('txt_disb');
+		}
+		else
+		{
+			$disb = 0;
+		}
+	
+	$sprb = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'hrgtotb' => $this->input->post('txt_tot_hrgb'),
+						'disbtp' => $this->input->post('cb_disb'),
+						'disb' => $disb,
+						'hrgtotalb' => $this->input->post('txt_totall_hrgb'),
+						'bbyr' => $this->input->post('txt_byrb'),
+						'bccl' => $this->input->post('txt_cclb'),
+						'cclnb' => $this->input->post('txt_cclnb'),
+						);
+	
+
+	if($this->input->post('txt_byrb') == 'T')
+	{
+		$sprp[] = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'tipe' => 'UBT',
+						'ang' => 0,
+						'jtmp' => $this->lib->conv_date_to_int($this->input->post('txt_tgl_jtb')),
+						'total' => $this->input->post('txt_totall_hrgb'),
+						'status' => 'BLN'
+					);
+	}
+	
+	$cclb =  $this->input->post('txt_cclb2');
+	$tglcclb =  $this->input->post('txt_tgl_cclb');
+	
+	foreach($this->input->post('txt_angb') as $key => $angb)
+	{
+		$sprp[] = array( 
+						'sprno' => $sprno,
+						'projid' => $this->input->post('txt_projid'),
+						'tipe' => 'UBT',
+						'ang' => $angb,
+						'jtmp' => $this->lib->conv_date_to_int($tglcclb[$key]),
+						'total' => $cclb[$key],
+						'status' => 'BLN'
+					);
+	}
+		$this->mod_spr->input_sprb($sprb);
+	}
+	
+	$this->mod_kav->update_kav($this->input->post('txt_projid'),$this->input->post('txt_blok'),$this->input->post('txt_no'),$kav);
+	$this->mod_kav->input_kavlog($kavlog);
+	$this->mod_spr->input_sprh($sprh);
+	$this->mod_spr->input_sprp($sprp);
+	if ($booking_source) $this->db->where('id',$booking_source->id)->update('tbooking',array('status'=>'SPR'));
+
+	$this->lib->commit_no($this->input->post('txt_projid'),$sprno,'SPR');
+	$this->db->trans_complete();
+	
+	if ($this->db->trans_status() === FALSE)
+	{
+        // generate an error... or use the log_message() function to log your error
+		$this->session->set_flashdata('error', 'Buat SPR gagal!');
+		redirect('spr/do_search_spr/'.$this->input->post('txt_projid'));
+	}
+	else
+	{
+		/* ------------------------------- INPUT KWITANSI UTJ ------------------------------ */	
+		$kwtno = $this->lib->get_no($this->input->post('txt_projid'),'KWT');
+		$kwt = array( 
+						'kwtno' => $kwtno,
+						'projid' => $this->input->post('txt_projid'),
+						'sprno' => $sprno,
+						'tipe' => 'UTJ',
+						'ang' => 0,
+						'tgl' => $this->lib->conv_date_to_int($this->input->post('txt_tgl_trans')),
+						'ket' => 'PEMBAYARAN UTJ',
+						'byr' => 'C',
+						'total' => $this->input->post('txt_utj'),
+						'crby' => $this->session->userdata('userid'),
+						'crdat' => date('Y-m-d')
+						);
+		$sprp = array( 
+						'kwtno' => $kwtno,
+						'status' => 'LNS',
+						);
+		
+			$this->db->trans_start();	
+			$this->mod_kwt->input_kwt($kwt);
+			$this->mod_spr->update_sprp($this->input->post('txt_projid'),$sprno,'UTJ',0,$sprp);
+			$this->lib->commit_no($this->input->post('txt_projid'),$kwtno,'KWT');
+			$this->db->trans_complete();
+		
+		$this->session->set_flashdata('ok', 'SPR sudah di buat dengan nomor '.$this->lib->no_spr($sprno));
+		redirect('spr/edit_spr/'.$sprno.'/'.$this->input->post('txt_projid'));
+	
+	}
+		
+}
+	
+function edit_spr()
+{
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'R');
+	
+	$data['title'] = 'SPR No : '.$this->lib->no_spr($this->uri->segment(3));
+	$data['form_action'] = site_url('spr/do_edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));	
+	$data['form_action2'] = site_url('spr/do_edit_sprstd/'.$this->uri->segment(3).'/'.$this->uri->segment(4));	
+	$data['form_action3'] = site_url('spr/do_edit_sprf/'.$this->uri->segment(3).'/'.$this->uri->segment(4));	
+	$data['form_action4'] = site_url('spr/do_edit_sprb/'.$this->uri->segment(3).'/'.$this->uri->segment(4));	
+	$data['form_status'] = site_url('spr/do_input_status');	
+	$data['form_upload'] = site_url('spr/do_upload_file');	
+	$data['form_batal'] = site_url('spr/do_batal_spr');	
+	$data['url_back'] = site_url('spr/do_search_spr/'.$this->uri->segment(4));	
+	$data['form_kpr'] = site_url('spr/do_input_kpr');	
+	
+	$sprh = $this->mod_spr->get_sprh($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprh'] = $sprh;	
+	
+	$sprf_h = $this->mod_spr->get_sprf_h($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprf_h'] = $sprf_h;	
+	
+	$sprf = $this->mod_spr->get_sprf($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprf'] = $sprf;
+	
+	$sprd = $this->mod_spr->list_sprd($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprd'] = $sprd;
+	
+	$kwt = $this->mod_kwt->get_kwt_spr($this->uri->segment(4),$this->uri->segment(3))->result();
+	$data['kwt'] = $kwt;
+	
+	$sprb = $this->mod_spr->list_sprb($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprb'] = $sprb;
+	
+	//print_r($sprf);
+	
+	//Tgl jth tempo penurunan KPR
+	$query_jtmp_kpr = $this->db->query("SELECT * FROM tsprp WHERE sprno = '".$this->uri->segment(3)."' AND projid = '".$this->uri->segment(4)."' AND tipe = 'UMT' AND ang IN (0,1)");
+	if($query_jtmp_kpr->num_rows() == 0)
+	{
+		$data['jtmpkpr'] = date('Y-m-d');	
+	}
+	else
+	{
+		foreach( $query_jtmp_kpr->result()  as $row_jtmp_kpr);
+		$data['jtmpkpr'] = $row_jtmp_kpr->jtmp;	
+	}
+	
+	//Tgl jth tempo
+	$query_jtmp = $this->db->query("SELECT * FROM tsprp WHERE sprno = '".$this->uri->segment(3)."' AND projid = '".$this->uri->segment(4)."' AND tipe = 'UMK' AND ang IN (0,1)");
+	foreach( $query_jtmp->result()  as $row_jtmp);
+	$data['jtmp'] = $row_jtmp->jtmp;	
+	
+	//Tgl jth tempo fitur
+	if(!empty($sprf))
+	{
+	$query_jtmpf = $this->db->query("SELECT * FROM tsprp WHERE sprno = '".$this->uri->segment(3)."' AND projid = '".$this->uri->segment(4)."' AND tipe = 'UFT' AND ang IN (0,1)");
+	foreach( $query_jtmpf->result()  as $row_jtmpf);
+	$data['jtmpf'] = $row_jtmpf->jtmp;	
+	}
+	else
+	{
+		$data['jtmpf'] = '';	
+	}
+	
+	//Tgl jth biaya biaya titipan
+	if(!empty($sprb))
+	{
+	$query_jtmpb = $this->db->query("SELECT * FROM tsprp WHERE sprno = '".$this->uri->segment(3)."' AND projid = '".$this->uri->segment(4)."' AND tipe = 'UBT' AND ang IN (0,1)");
+	foreach( $query_jtmpb->result()  as $row_jtmpb);
+	$data['jtmpb'] = $row_jtmpb->jtmp;	
+	}
+	else
+	{
+		$data['jtmpb'] = '';	
+	}
+	
+	//print_r($sprf_h);
+	
+	//$data['cb_bank'] = $this->lib->generate_cb_bank('');	
+	//Get total yg sudah dibayar
+	$sql_tot_byr = $this->db->query("SELECT sum(total) as total_spr FROM `tkwt` 
+	WHERE `projid` =  '".$this->uri->segment(4)."' AND `sprno` = '".$this->uri->segment(3)."'
+	AND  btl <> '1'");
+	foreach( $sql_tot_byr->result()  as $row_byr);
+	
+	$data['tot_byr'] = $row_byr->total_spr;	
+	
+	foreach ($this->mod_spr->get_sprh($this->uri->segment(3), $this->uri->segment(4))->result() as $row_sprh);
+
+	$sql_kav = $this->db->query("SELECT jenis 
+	FROM `mkav` 
+	WHERE `projid` =  '".$row_sprh->projid."' AND `blok` = '".$row_sprh->blok."' AND `no` = '".$row_sprh->no."'");
+	foreach( $sql_kav->result()  as $row_kav);
+
+	$data['jenis'] = $row_kav->jenis;	
+
+	$sql_slsman = $this->db->query("SELECT kodeslsman, 
+	COALESCE(( select namaslsman from msalesman where msalesman.kodeslsman = tsprh.kodeslsman), '') as namaslsman 
+	FROM tsprh 
+	WHERE `sprno` =  '".$row_sprh->sprno."' AND `projid` =  '".$row_sprh->projid."' AND `blok` = '".$row_sprh->blok."' AND `no` = '".$row_sprh->no."'");
+	foreach( $sql_slsman->result()  as $row_slsman);
+
+
+	$data['salesman'] = $row_slsman->kodeslsman . ' - ' . $row_slsman->namaslsman;	
+
+	$this->load->view('frm_spr_edit',$data);
+}
+
+function do_batal_spr()
+{
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+	$tgl_btl = $this->lib->conv_date_to_int($this->input->post('txt_tgl_btl'));
+	if($this->input->post('txt_btlstat') == '') //Jika belum ada data pembatalan
+	{
+	$spr = array( 
+						'status' => 'BTL',
+						'btlby' => $this->session->userdata('userid'),
+						'btldat' => $tgl_btl,
+						'btlstat' => $this->input->post('cb_btl'),
+						'bankid' => $this->input->post('cb_bank'),
+						'accno' => $this->input->post('txt_accno'),
+						'namacc' => $this->input->post('txt_namacc'),
+						'totsetor' => $this->lib->convert_idr_to_num($this->input->post('txt_byr_hid')),
+						'totbyr' => $this->lib->convert_idr_to_num($this->input->post('txt_byr')),
+						'byadm' => $this->lib->convert_idr_to_num($this->input->post('txt_by_adm')),
+						'chby' => $this->session->userdata('userid'),
+						'chdat' => date('Y-m-d')
+						);
+	
+	$kwtno = $this->lib->get_no($this->input->post('txt_btl_proj'),'KWT');
+	
+	$kwt = array( 
+						'kwtno' => $kwtno,
+						'projid' => $this->input->post('txt_btl_proj'),
+						'sprno' => $this->input->post('txt_btl_sprno'),
+						'tipe' => 'BTL',
+						'ang' => 0,
+						'tgl' => $tgl_btl,
+						'ket' => 'Batal SPR',
+						'byr' => 'T',
+						'total' => $this->lib->convert_idr_to_num($this->input->post('txt_byr')) * -1,
+						'crby' => $this->session->userdata('userid'),
+						'crdat' => date('Y-m-d')
+						);
+	
+	$kav = array( 
+						'status' => 'BTL',
+						'chby' => $this->session->userdata('userid'),
+						'chdat' => date('Y-m-d'),
+					);
+					
+	$kavlog = array( 
+						'projid' => $this->input->post('txt_btl_proj'),
+						'blok' => $this->input->post('txt_btl_blok'),
+						'no' => $this->input->post('txt_btl_no'),
+						'status' => 'BTL',
+						'sprno' => $this->input->post('txt_btl_sprno'),
+						'ket' => 'SISTEM',
+						'crby' => $this->session->userdata('userid'),
+						'crdat' => date('Y-m-d'),
+						'crtim' => $this->lib->get_time()
+					);
+									
+   $this->db->trans_start();						
+   $this->mod_spr->update_sprh($this->input->post('txt_btl_sprno'),$this->input->post('txt_btl_proj'),$spr);
+   $this->mod_kwt->input_kwt($kwt);
+   $this->lib->commit_no($this->input->post('txt_btl_proj'),$kwtno,'KWT');
+   $this->mod_kav->update_kav($this->input->post('txt_btl_proj'),$this->input->post('txt_btl_blok'),$this->input->post('txt_btl_no'),$kav);
+	$this->mod_kav->input_kavlog($kavlog);
+   $this->db->trans_complete();
+   
+   if ($this->db->trans_status() === FALSE)
+			{
+				$this->session->set_flashdata('error', 'Batal SPR gagal!');
+				redirect('spr/edit_spr/'.$this->input->post('txt_btl_sprno').'/'.$this->input->post('txt_btl_proj'));
+			}
+			else
+			{
+				$this->session->set_flashdata('ok', 'Batal SPR sukses');
+				redirect('spr/edit_spr/'.$this->input->post('txt_btl_sprno').'/'.$this->input->post('txt_btl_proj'));
+			}
+
+	}
+	else
+	{
+		$spr = array( 
+						'bankid' => $this->input->post('cb_bank'),
+						'accno' => $this->input->post('txt_accno'),
+						'namacc' => $this->input->post('txt_namacc'),
+						'chby' => $this->session->userdata('userid'),
+						'chdat' => date('Y-m-d')
+						);
+		
+		 $this->mod_spr->update_sprh($this->input->post('txt_btl_sprno'),$this->input->post('txt_btl_proj'),$spr);
+		 				
+		$this->session->set_flashdata('ok', 'Data pembatalan bank sudah diubah');
+		redirect('spr/edit_spr/'.$this->input->post('txt_btl_sprno').'/'.$this->input->post('txt_btl_proj'));
+		
+	}
+	
+}
+
+function do_edit_spr()
+{
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+	
+	$konsumen = array( 
+						'nama' => $this->input->post('txt_nama'),
+						'ktp' => $this->input->post('txt_ktp'),
+						'npwp' => $this->input->post('txt_npwp'),
+						'alm' => $this->input->post('txt_alm'),
+						'telp' => $this->input->post('txt_telp'),
+						'telp2' => $this->input->post('txt_telp2'),
+						'email' => $this->input->post('txt_email'),
+						'chby' => $this->session->userdata('userid'),
+						'chdat' => date('Y-m-d')
+						);
+	
+	$this->mod_spr->update_sprh($this->uri->segment(3),$this->uri->segment(4),$konsumen);
+						
+	$this->session->set_flashdata('ok', 'Data konsumen berhasil diubah');
+    redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+}
+
+function do_edit_sprstd()
+{
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+	
+	//Check apakah ada data kwitansi ?
+	$sql_spr = $this->db->query("SELECT sum(total) as total_spr FROM `tkwt` 
+	WHERE `projid` =  '".$this->uri->segment(4)."' AND `sprno` = '".$this->uri->segment(3)."'
+	AND  btl <> '1' AND tipe IN ('UTJ','UMK')");
+	foreach( $sql_spr->result()  as $row_spr);
+	
+	/*$sql_btl = $this->db->query("SELECT sum(total) as total_btl FROM `tkwt` 
+	WHERE `projid` = '".$this->uri->segment(4)."' AND `sprno` = '".$this->uri->segment(3)."'
+	AND kwtbtl IN( SELECT kwtno FROM `tkwt` WHERE `projid` = '".$this->uri->segment(4)."' 
+	AND `sprno` = '".$this->uri->segment(3)."' AND tipe IN ('UTJ','UMK'))");
+	foreach( $sql_btl->result()  as $row_btl);*/
+	
+	$total_kwt = $row_spr->total_spr;
+	//echo $total_kwt;
+	
+	if($total_kwt == 0)
+	{
+		//Hapus rencana pembayaran spr
+		$sql_del_sprp = "DELETE FROM tsprp WHERE tipe IN ('UTJ','UMK') AND sprno =  '".$this->uri->segment(3)."' 
+		AND projid = '".$this->uri->segment(4)."'";
+	
+		if($this->input->post('cb_dis') == 'V')
+		{
+			$dis = $this->lib->convert_idr_to_num($this->input->post('txt_dis'));
+			$hrgtot = 	$this->input->post('txt_hrgstd') - $dis;
+		}
+		elseif ($this->input->post('cb_dis') == 'P')
+		{
+			$dis = $this->input->post('txt_dis');
+			$hrgtot = 	$this->input->post('txt_hrgstd') - (($this->input->post('txt_dis') / 100) * $this->input->post('txt_hrgstd'));
+		}
+		else
+		{
+			$dis = 0;
+			$hrgtot = 	$this->input->post('txt_hrgstd');
+		}
+		
+		//PPN
+		if($this->input->post('chk_ppn')=='X')
+		{
+			//$hrgtot = $hrgtot + ($hrgtot* 0.1);			$hrgtot = $hrgtot + ($hrgtot* 0.11);
+			$ppn = $hrgtot * 11/100 ;
+		}
+		else
+		{
+			$ppn = 0;
+		}
+		
+		if($this->input->post('cb_disum') == 'V')
+		{
+			$disum = $this->lib->convert_idr_to_num($this->input->post('txt_disum'));
+			$umtot = $this->lib->convert_idr_to_num($this->input->post('txt_dp')) - $disum;
+		}
+		elseif ($this->input->post('cb_disum') == 'P')
+		{
+			$umtot = $this->lib->convert_idr_to_num($this->input->post('txt_dp')) - (($this->input->post('txt_disum') / 100) * $this->lib->convert_idr_to_num($this->input->post('txt_dp')));
+			$disum = $this->input->post('txt_disum');
+		}
+		else
+		{
+			$disum = 0;
+			$umtot = $this->lib->convert_idr_to_num($this->input->post('txt_dp'));
+		}
+		
+		
+		$kpr = $hrgtot - $this->lib->convert_idr_to_num($this->input->post('txt_dp'));
+		$jml_ccl = $this->input->post('txt_dp_ccl');
+		$tgl_jtdp = $this->lib->conv_date_to_int($this->input->post('txt_tgl_jtdp'));
+		
+		$cclns = $this->lib->convert_idr_to_num($this->input->post('txt_dp_cclns'));
+		
+		$sprh = array( 
+					'utj' => $this->lib->convert_idr_to_num($this->input->post('txt_bkf')),
+					'umk' => $this->lib->convert_idr_to_num($this->input->post('txt_dp')),
+					'cclns' => $cclns,
+					'umccl' => $jml_ccl,
+					'umbyr' => $this->input->post('cb_byr'),
+					'umdis' => $disum,
+					'umdistp' => $this->input->post('cb_disum'),
+					'umtot' => $umtot,
+					'kpr' => $kpr,
+					'kpr_ccl' => $this->input->post('txt_kpr_ccl'),
+					'distp' => $this->input->post('cb_dis'),
+					'dis' => $dis,
+					'hrgtot' => $hrgtot,
+					'hrgstd' => $this->input->post('txt_hrgstd'),
+					'tglhrg' => $this->input->post('txt_spr_hrgdat'),
+					'ppn' => $ppn,
+					'chby' => $this->session->userdata('userid'),
+					'chdat' => date('Y-m-d'),
+					'crdat' => $this->lib->conv_date_to_int($this->input->post('txt_tgl_trans'))
+						);
+		
+		$sprp[] = array( 
+						'sprno' => $this->uri->segment(3),
+						'projid' => $this->uri->segment(4),
+						'tipe' => 'UTJ',
+						'ang' => 0,
+						//'jtmp' => $this->input->post('txt_spr_crdat'),
+						'jtmp' => $this->lib->conv_date_to_int($this->input->post('txt_tgl_trans')),
+						'total' => $this->lib->convert_idr_to_num($this->input->post('txt_bkf')),
+						'status' => 'BLN'
+					);
+					
+			if($this->input->post('cb_byr') == 'T')
+			{
+				$sprp[] = array( 
+								'sprno' => $this->uri->segment(3),
+								'projid' => $this->uri->segment(4),
+								'tipe' => 'UMK',
+								'ang' => 0,
+								'jtmp' => $tgl_jtdp,
+								'total' => ($umtot - $this->lib->convert_idr_to_num($this->input->post('txt_bkf'))), //+ $this->input->post('txt_byttp'),
+								'status' => 'BLN'
+							);
+				
+			}
+			else
+			{
+
+if($cclns == 0)
+{				
+			$tot_ccl = ($umtot - $this->lib->convert_idr_to_num($this->input->post('txt_bkf'))); //+ $this->input->post('txt_byttp');
+			
+				$tot_ccl_bln = $tot_ccl / $jml_ccl;
+}
+else
+{
+	$tot_ccl = (($umtot - $this->lib->convert_idr_to_num($this->input->post('txt_bkf'))) /*+ $this->input->post('txt_byttp')*/) - $cclns;
+	
+		$tot_ccl_bln = $tot_ccl / ($jml_ccl-1);
+	
+}
+			
+		
+			
+			for ($i=1;$i<=$jml_ccl;$i++) { 
+				if($i == 1)
+				{
+					$date=$tgl_jtdp;
+				}
+				else
+				{
+					$datenow = strtotime($date);
+	$date = date("Y-m-d", strtotime("+1 month", $datenow));
+	
+				}
+				
+				if($cclns > 0)
+				{
+					if($i==$jml_ccl)
+					{
+						$tot_ccl_bln = $cclns;
+					}
+				}
+				
+				$sprp[] = array( 
+							'sprno' => $this->uri->segment(3),
+							'projid' => $this->uri->segment(4),
+							'tipe' => 'UMK',
+							'ang' => $i,
+							'jtmp' => $date,
+							'total' => $tot_ccl_bln,
+							'status' => 'BLN'
+						);
+			
+				}
+				
+			}
+			
+			$this->db->trans_start();	
+			$this->db->query($sql_del_sprp);
+			$this->mod_spr->update_sprh( $this->uri->segment(3), $this->uri->segment(4),$sprh);
+			$this->mod_spr->input_sprp($sprp);
+			$this->db->trans_complete();
+			
+			if ($this->db->trans_status() === FALSE)
+			{
+				$this->session->set_flashdata('error', 'Ubah SPR standard gagal!');
+				redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+			}
+			else
+			{
+				$this->session->set_flashdata('ok', 'Ubah SPR standard sukses');
+				redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+			}
+			
+	}
+	else
+	{
+		$this->session->set_flashdata('error', 'Tidak bisa ubah spr standard, mohon batalkan semua kwitansi spr standard dulu');
+    	redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+	}
+	
+}
+
+function do_edit_sprb()
+{
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+	
+	//Check apakah ada data kwitansi ?
+	$sql_spr = $this->db->query("SELECT sum(total) as total_sprb FROM `tkwt` 
+	WHERE `projid` =  '".$this->uri->segment(4)."' AND `sprno` = '".$this->uri->segment(3)."'
+	AND  btl <> '1' AND tipe IN ('UBT')");
+	foreach( $sql_spr->result()  as $row_spr);
+	
+	$total_kwt = $row_spr->total_sprb;
+	
+	if($total_kwt == 0)
+	{
+		
+		//Hapus rencana pembayaran biaya titipan
+		$sql_del_sprp = "DELETE FROM tsprp WHERE tipe = 'UBT' AND sprno =  '".$this->uri->segment(3)."' 
+		AND projid = '".$this->uri->segment(4)."'";
+	
+		if($this->input->post('cb_disb') == 'V')
+		{
+			$disb = $this->lib->convert_idr_to_num($this->input->post('txt_disb'));
+		}
+		elseif ($this->input->post('cb_disb') == 'P')
+		{
+			$disb = ($this->input->post('txt_disb') / 100) * $this->input->post('txt_tot_hrgb');
+		}
+		else
+		{
+			$disb = 0;
+		}
+		
+		$hrgtotalb = 	$this->input->post('txt_tot_hrgb') - $disb;
+		$cclnb = $this->lib->convert_idr_to_num($this->input->post('txt_dp_cclnb'));
+		
+		$sprb = array( 
+					'hrgtotb' => $this->input->post('txt_tot_hrgb'),
+					'hrgtotalb' => $hrgtotalb,
+					'disbtp' => $this->input->post('cb_disb'),
+					'disb' => $disb,
+					'bbyr' => $this->input->post('cb_byrb'),
+					'bccl' => $this->input->post('txt_cclb'),
+					'cclnb' => $cclnb,
+						);
+						
+			$sprh = array( 
+					'byttp' => $this->input->post('txt_tot_hrgb'),
+					'chby' => $this->session->userdata('userid'),
+					'chdat' => date('Y-m-d')
+						);
+						
+	
+		if($this->input->post('cb_byrb') == 'T')
+		{
+			$sprp[] = array( 
+							'sprno' => $this->uri->segment(3),
+							'projid' => $this->uri->segment(4),
+							'tipe' => 'UBT',
+							'ang' => 0,
+							'jtmp' => $this->input->post('txt_sprb_crdat'),
+							'total' => $hrgtotalb,
+							'status' => 'BLN'
+						);
+		}
+		else
+		{
+			$jml_cclb =  $this->input->post('txt_cclb');
+			$tgl_jtb = $this->lib->conv_date_to_int($this->input->post('txt_tgl_jtb'));
+			
+			if($cclnb == 0)
+			{	
+				$tot_cclb = $hrgtotalb;
+				$tot_cclb_bln = $tot_cclb / $jml_cclb;
+			}
+			else
+			{
+				$tot_cclb = $hrgtotalb - $cclnb;
+				$tot_cclb_bln = $tot_cclb / ($jml_cclb-1);
+			}
+			
+			for ($i=1;$i<=$jml_cclb;$i++) { 
+			
+			if($i == 1)
+			{
+				$date=$tgl_jtb;
+			}
+			else
+			{
+				$datenow = strtotime($date);
+$date = date("Y-m-d", strtotime("+1 month", $datenow));
+
+			}
+			
+			if($cclnb > 0)
+				{
+					if($i==$jml_cclb)
+					{
+						$tot_cclb_bln = $cclnb;
+					}
+				}
+				
+			$sprp[] = array( 
+							'sprno' => $this->uri->segment(3),
+							'projid' => $this->uri->segment(4),
+							'tipe' => 'UBT',
+							'ang' => $i,
+							'jtmp' => $date,
+							'total' => $tot_cclb_bln,
+							'status' => 'BLN'
+						);
+						
+			}
+		}
+		
+		//Input
+			$this->db->trans_start();	
+			$this->db->query($sql_del_sprp);
+			$this->mod_spr->update_sprh( $this->uri->segment(3), $this->uri->segment(4),$sprh);
+			$this->mod_spr->update_sprb( $this->uri->segment(3), $this->uri->segment(4),$sprb);
+			$this->mod_spr->input_sprp($sprp);
+			$this->db->trans_complete();
+			
+			if ($this->db->trans_status() === FALSE)
+			{
+				$this->session->set_flashdata('error', 'Ubah SPR biaya biaya titipan gagal!');
+				//echo mysql_error();
+				redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+			}
+			else
+			{
+				$this->session->set_flashdata('ok', 'Ubah SPR fitur biaya biaya titipan sukses');
+				redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+			}
+	}
+	else
+	{
+		$this->session->set_flashdata('error', 'Tidak bisa ubah spr biaya biaya titipan, mohon batalkan semua kwitansi spr biaya biaya titipan dulu');
+    	redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+		
+	}
+	
+}
+
+function do_edit_sprf()
+{
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+	
+	//Check apakah ada data kwitansi ?
+	$sql_spr = $this->db->query("SELECT sum(total) as total_sprf FROM `tkwt` 
+	WHERE `projid` =  '".$this->uri->segment(4)."' AND `sprno` = '".$this->uri->segment(3)."'
+	AND  btl <> '1' AND tipe IN ('UFT')");
+	foreach( $sql_spr->result()  as $row_spr);
+	
+	$total_kwt = $row_spr->total_sprf;
+	
+	if($total_kwt == 0)
+	{
+		
+		//Hapus rencana pembayaran sprf
+		$sql_del_sprp = "DELETE FROM tsprp WHERE tipe = 'UFT' AND sprno =  '".$this->uri->segment(3)."' 
+		AND projid = '".$this->uri->segment(4)."'";
+	
+		if($this->input->post('cb_disf') == 'V')
+		{
+			$disf = $this->lib->convert_idr_to_num($this->input->post('txt_disf'));
+		}
+		elseif ($this->input->post('cb_disf') == 'P')
+		{
+			$disf = ($this->input->post('txt_disf') / 100) * $this->input->post('txt_tot_hrgf');
+		}
+		else
+		{
+			$disf = 0;
+		}
+		
+		$hrgtotalf = 	$this->input->post('txt_tot_hrgf') - $disf;
+		$cclnf = $this->lib->convert_idr_to_num($this->input->post('txt_dp_cclnf'));
+		
+		$sprf = array( 
+					'hrgtotalf' => $hrgtotalf,
+					'disftp' => $this->input->post('cb_disf'),
+					'disf' => $disf,
+					'fbyr' => $this->input->post('cb_byrf'),
+					'fccl' => $this->input->post('txt_cclf'),
+					'cclnf' => $cclnf,
+						);
+						
+			$sprh = array( 
+					'chby' => $this->session->userdata('userid'),
+					'chdat' => date('Y-m-d')
+						);
+						
+	
+		if($this->input->post('cb_byrf') == 'T')
+		{
+			$sprp[] = array( 
+							'sprno' => $this->uri->segment(3),
+							'projid' => $this->uri->segment(4),
+							'tipe' => 'UFT',
+							'ang' => 0,
+							'jtmp' => $this->input->post('txt_sprf_crdat'),
+							'total' => $hrgtotalf,
+							'status' => 'BLN'
+						);
+		}
+		else
+		{
+			$jml_cclf =  $this->input->post('txt_cclf');
+			$tgl_jtf = $this->lib->conv_date_to_int($this->input->post('txt_tgl_jtf'));
+			
+			if($cclnf == 0)
+			{	
+				$tot_cclf = $hrgtotalf;
+				$tot_cclf_bln = $tot_cclf / $jml_cclf;
+			}
+			else
+			{
+				$tot_cclf = $hrgtotalf - $cclnf;
+				$tot_cclf_bln = $tot_cclf / ($jml_cclf-1);
+			}
+			
+			for ($i=1;$i<=$jml_cclf;$i++) { 
+			
+			if($i == 1)
+			{
+				$date=$tgl_jtf;
+			}
+			else
+			{
+				$datenow = strtotime($date);
+$date = date("Y-m-d", strtotime("+1 month", $datenow));
+
+			}
+			
+			if($cclnf > 0)
+				{
+					if($i==$jml_cclf)
+					{
+						$tot_cclf_bln = $cclnf;
+					}
+				}
+				
+			$sprp[] = array( 
+							'sprno' => $this->uri->segment(3),
+							'projid' => $this->uri->segment(4),
+							'tipe' => 'UFT',
+							'ang' => $i,
+							'jtmp' => $date,
+							'total' => $tot_cclf_bln,
+							'status' => 'BLN'
+						);
+						
+			}
+		}
+		
+		//Input
+			$this->db->trans_start();	
+			$this->db->query($sql_del_sprp);
+			$this->mod_spr->update_sprh( $this->uri->segment(3), $this->uri->segment(4),$sprh);
+			$this->mod_spr->update_sprf( $this->uri->segment(3), $this->uri->segment(4),$sprf);
+			$this->mod_spr->input_sprp($sprp);
+			$this->db->trans_complete();
+			
+			if ($this->db->trans_status() === FALSE)
+			{
+				$this->session->set_flashdata('error', 'Ubah SPR fitur gagal!');
+				redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+			}
+			else
+			{
+				$this->session->set_flashdata('ok', 'Ubah SPR fitur sukses');
+				redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+			}
+	}
+	else
+	{
+		$this->session->set_flashdata('error', 'Tidak bisa ubah spr fitur, mohon batalkan semua kwitansi spr fitur dulu');
+    	redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+		
+	}
+	
+}
+
+function do_input_status()
+{
+	/*$um = $this->lib->disp_prog_um($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_sprno'));
+	$dok = $this->lib->disp_prog_dok($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_sprno'));
+	$kavl = $this->lib->disp_prog_kav($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_blok'),$this->input->post('txt_kav_no'));*/
+			
+	$kav = array( 
+						'status' => $this->input->post('cb_stat'),
+						'chby' => $this->session->userdata('userid'),
+						'chdat' => date('Y-m-d')
+						);
+
+			$kavlog = array( 
+						'projid' => $this->input->post('txt_kav_proj'),
+						'blok' => $this->input->post('txt_kav_blok'),
+						'no' => $this->input->post('txt_kav_no'),
+						'sprno' => $this->input->post('txt_kav_sprno'),
+						'status' => $this->input->post('cb_stat'),
+						'ket' => $this->input->post('txt_ket'),
+						'crby' => $this->session->userdata('userid'),
+						'crdat' => date('Y-m-d'),
+						'crtim' => $this->lib->get_time()
+						);
+	if(	$this->input->post('cb_stat') == 'AKD' ) //Cek status sudah akad
+	{
+		//if($um != 100 || $dok != 100 || $kavl != 100)
+		if($this->lib->cek_prog_done($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_sprno'),$this->input->post('txt_kav_blok'),$this->input->post('txt_kav_no'))==FALSE)
+		{
+			$this->session->set_flashdata('error', 'Progress uang muka, dokumen dan kavling harus 100%');
+			redirect('spr/edit_spr/'.$this->input->post('txt_kav_sprno').'/'.$this->input->post('txt_kav_proj'));
+		}
+		elseif($this->lib->cek_umt_lunas($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_sprno')) > 0)
+		{
+			$this->session->set_flashdata('error', 'Kekurangan tambahan uang muka belum lunas');
+			redirect('spr/edit_spr/'.$this->input->post('txt_kav_sprno').'/'.$this->input->post('txt_kav_proj'));
+		}
+	}
+	
+			$this->mod_kav->update_kav($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_blok'),$this->input->post('txt_kav_no'),$kav);
+			$this->mod_kav->input_kavlog($kavlog);
+			
+		$this->session->set_flashdata('ok', 'Status berhasil ditambah');
+		redirect('spr/edit_spr/'.$this->input->post('txt_kav_sprno').'/'.$this->input->post('txt_kav_proj'));
+}
+
+function do_upload_file()
+{
+	//print_r($_FILES["userfile"]);
+	$field_name = "userfile";
+	$path = 'assets/uploads/'.$this->input->post('txt_upl_proj').'_'.$this->input->post('txt_upl_sprno');
+	
+	
+	if(!is_dir($path)) //create the folder if it's not already exists
+    {
+     	mkdir($path,0755,TRUE);
+    } 
+	
+	$config['upload_path'] = $path;
+	$config['allowed_types'] = '*';
+	$config['remove_spaces']     = TRUE;
+	$config['overwrite']     = FALSE;
+	$config['max_size']      = 1000000; //500; //500 kb
+	/*
+	$config['max_width'] = '1024';
+	$config['max_height'] = '768';*/
+
+	$this->load->library('upload', $config);
+	
+	if (!$this->upload->do_upload())
+		{
+			$this->session->set_flashdata('error', $this->upload->display_errors());
+			redirect('spr/edit_spr/'.$this->input->post('txt_upl_sprno').'/'.$this->input->post('txt_upl_proj'));
+		}
+   else
+		{
+			$file = array( 
+						'projid' => $this->input->post('txt_upl_proj'),
+						'sprno' => $this->input->post('txt_upl_sprno'),
+						'namfile' => $this->upload->data('client_name'),
+						'tipe' => $this->upload->data('file_ext'),
+						'size' => $this->upload->data('file_size'),
+						'path' => $this->input->post('txt_upl_proj').'_'.$this->input->post('txt_upl_sprno').'/'.$this->upload->data('file_name'),
+						'status' => $this->input->post('cb_stat_dok'),
+						'crby' => $this->session->userdata('userid'),
+						'crdat' => date('Y-m-d')
+						);
+		
+		$this->mod_spr->input_sprd($file);
+		$this->session->set_flashdata('ok', 'Dokumen sudah terupload');
+		redirect('spr/edit_spr/'.$this->input->post('txt_upl_sprno').'/'.$this->input->post('txt_upl_proj'));
+		
+			//print_r($this->upload->data());
+		}
+
+}
+
+function delete_file()
+{
+	$sprd = $this->mod_spr->get_sprd($this->uri->segment(5))->result();
+	foreach($sprd as $row);
+	
+	$files = 'assets/uploads/'.$row->path;
+	unlink($files);
+	
+	$this->mod_spr->delete_sprd($this->uri->segment(5));
+	$this->session->set_flashdata('ok', 'Dokumen sudah di hapus');
+	redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+}
+
+function print_spr()
+{
+	$sprh = $this->mod_spr->get_sprh($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprh'] = $sprh;	
+	
+	$sprp_t = $this->mod_spr->get_sprp_t($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprp_t'] = $sprp_t;
+	
+	$sprp = $this->mod_spr->get_sprp($this->uri->segment(3),$this->uri->segment(4),'UMK')->result();
+	$data['sprp'] = $sprp;	
+	
+	$filename = 'SPR_'.$this->lib->no_spr($this->uri->segment(3)).'-'.$this->uri->segment(4);
+	 $this->load->library('pdf');
+     
+	 $this->pdf->load_view('print_spr',$data,$filename);
+		 
+	//$this->load->view('print_spr',$data);	
+}
+
+function print_sprf()
+{
+	$sprh = $this->mod_spr->get_sprh($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprh'] = $sprh;	
+	
+	$sprf_h = $this->mod_spr->get_sprf_h($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprf_h'] = $sprf_h;	
+	
+	$sprf = $this->mod_spr->get_sprf($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprf'] = $sprf;	
+	
+	$sprpf_t = $this->mod_spr->get_sprpf_t($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprpf_t'] = $sprpf_t;
+	
+	$sprp = $this->mod_spr->get_sprp($this->uri->segment(3),$this->uri->segment(4),'UFT')->result();
+	$data['sprp'] = $sprp;	
+	
+	$filename = 'SPRF_'.$this->lib->no_spr($this->uri->segment(3)).'-'.$this->uri->segment(4);
+	$this->load->library('pdf');
+    $this->pdf->load_view('print_sprf',$data,$filename);
+	
+}
+
+function print_spr_btl()
+{
+	$sprh = $this->mod_spr->get_sprh($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprh'] = $sprh;
+	
+	foreach($this->mod_spr->get_sprh($this->uri->segment(3),$this->uri->segment(4))->result() as $row_sprh );
+	if(	$row_sprh->status == 'BTL' )
+	{
+	
+	$sql_kwt = $this->db->query("SELECT * FROM tkwt WHERE sprno = '".$this->uri->segment(3)."' AND projid = '".$this->uri->segment(4)."' AND tipe = 'UTJ'");
+	foreach( $sql_kwt->result()  as $row_kwt);
+	$data['kwtno'] = $this->lib->no_kwt($row_kwt->kwtno);	
+	
+	foreach($this->mod_proj->edit_proj($this->uri->segment(4))->result() as $row_proj );
+	$data['namproj'] = strtoupper($row_proj->namproj);
+	
+	/*if($this->uri->segment(4)==2 || $this->uri->segment(4)==4)
+	{
+		$data['nama_pt'] = 'PT. MITRA BANGUN SAMAJI';
+	}
+	else
+	{
+		$data['nama_pt'] = 'PT.KARSA SAMANA IMAJI';
+	}*/
+	$data['nama_pt'] = $this->lib->get_pt($this->uri->segment(4));
+	
+	$sql_get_kav = $this->mod_kav->edit_kav($this->uri->segment(4),$this->uri->segment(5),$this->uri->segment(6));
+    foreach( $sql_get_kav->result()  as $row_kav );
+	
+	$data['tipe'] = $row_kav->tipe;
+	$data['luas'] = $row_kav->ltstd;
+	
+	$filename = 'SPR_BTL_'.$this->lib->no_spr($this->uri->segment(3)).'-'.$this->uri->segment(4);
+	$this->load->library('pdf');
+    $this->pdf->load_view('print_spr_btl',$data,$filename);
+		 
+	//$this->load->view('print_spr',$data);	
+	}
+	else
+	{
+		$this->session->set_flashdata('error', 'SPR belum dibatalkan');
+		redirect('spr/edit_spr/'.$this->uri->segment(3).'/'.$this->uri->segment(4));
+	}
+}
+
+function print_sprb()
+{
+	$sprh = $this->mod_spr->get_sprh($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprh'] = $sprh;	
+	
+	$sprb = $this->mod_spr->get_sprb($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprb'] = $sprb;	
+	
+	$sprpb_t = $this->mod_spr->get_sprpb_t($this->uri->segment(3),$this->uri->segment(4))->result();
+	$data['sprpb_t'] = $sprpb_t;
+	
+	$sprp = $this->mod_spr->get_sprp($this->uri->segment(3),$this->uri->segment(4),'UBT')->result();
+	$data['sprp'] = $sprp;	
+	
+	$filename = 'SPRB_'.$this->lib->no_spr($this->uri->segment(3)).'-'.$this->uri->segment(4);
+	$this->load->library('pdf');
+    $this->pdf->load_view('print_sprb',$data,$filename);
+	
+	
+}
+
+}

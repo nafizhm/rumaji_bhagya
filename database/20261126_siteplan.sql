@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS msiteplan (
+ projid INT NOT NULL PRIMARY KEY,
+ header_svg LONGTEXT NOT NULL,
+ footer_svg TEXT NOT NULL,
+ view_box VARCHAR(150) NOT NULL,
+ source_hash CHAR(64) NOT NULL,
+ source_file VARCHAR(200) NOT NULL,
+ updated_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS msiteplan_unit (
+ projid INT NOT NULL,
+ blok VARCHAR(3) NOT NULL,
+ no CHAR(4) NOT NULL,
+ kode_unit VARCHAR(20) NOT NULL,
+ jenis_map VARCHAR(10) NOT NULL,
+ map LONGTEXT NOT NULL,
+ matrik VARCHAR(255) NOT NULL,
+ shape_svg LONGTEXT NOT NULL,
+ label_svg LONGTEXT NOT NULL,
+ PRIMARY KEY (projid,blok,no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
