@@ -32,13 +32,16 @@ class Pencairan extends CI_Controller
         foreach ($history as $item) $item->retensi=$this->db->get_where('tpencairan_retensi',array('pencairan_id'=>$item->id))->result();
         $categories=$this->db->order_by('nama_retensi')->get('mretensi_kategori')->result();
         $plafon=(float)$spr->kpr;$kpp=0;$paid=0;
+        $project=$this->db->select('kkp')->get_where('mproj',array('projid'=>(int)$projid))->row();
+        $kkp_default=$project?(float)$project->kkp:0;
+        $kpp=$kkp_default;
         if ($history) {
             $plafon=(float)$history[0]->plafon;
-            foreach ($history as $item) { $kpp+=(float)$item->potongan_kpp;$paid+=(float)$item->jumlah; }
+            foreach ($history as $item) $paid+=(float)$item->jumlah;
             $categories=array();
             foreach ($history[0]->retensi as $line) $categories[]=(object)array('id'=>$line->kategori_id,'nama_retensi'=>$line->nama_retensi,'sisa'=>$line->nilai);
         }
-        $this->respond(array('spr'=>$spr,'kategori'=>$categories,'histori'=>$history,'plafon'=>$plafon,'kpp'=>$kpp,'sisa'=>max(0,$plafon-$kpp-$paid),'base_id'=>$history?$history[0]->id:0,'token'=>$this->session->userdata('pencairan_token'),'request_key'=>bin2hex(random_bytes(16))));
+        $this->respond(array('spr'=>$spr,'kategori'=>$categories,'histori'=>$history,'plafon'=>$plafon,'kpp'=>$kpp,'kkp'=>$kkp_default,'sisa'=>max(0,$plafon-$kpp-$paid),'base_id'=>$history?$history[0]->id:0,'token'=>$this->session->userdata('pencairan_token'),'request_key'=>bin2hex(random_bytes(16))));
     }
 
     private function amount($value)
@@ -53,13 +56,16 @@ class Pencairan extends CI_Controller
         $token=$this->session->userdata('pencairan_token');
         if (!$token || !hash_equals($token,(string)$this->input->post('token'))) { $this->respond(array('message'=>'Form tidak valid. Buka ulang modal.'),403);return; }
         $projid=(int)$this->input->post('projid');$sprno=(int)$this->input->post('sprno');
-        $plafon=$this->amount($this->input->post('plafon'));$kpp=$this->amount($this->input->post('kpp'));
+        $plafon=$this->amount($this->input->post('plafon'));
         $key=(string)$this->input->post('request_key');
-        if ($plafon===NULL || $plafon<=0 || $kpp===NULL || !preg_match('/^[a-f0-9]{32}$/D',$key)) { $this->respond(array('message'=>'Masukkan plafon lebih dari nol dan potongan berupa rupiah bulat, maksimal 13 digit.'),422);return; }
+        if ($plafon===NULL || $plafon<=0 || !preg_match('/^[a-f0-9]{32}$/D',$key)) { $this->respond(array('message'=>'Masukkan plafon lebih dari nol berupa rupiah bulat, maksimal 13 digit.'),422);return; }
         $spr=$this->spr($projid,$sprno);
         if (!$spr) { $this->respond(array('message'=>'SPR akad tidak ditemukan.'),404);return; }
         $this->db->trans_begin();
         $this->db->query('SELECT sprno FROM tsprh WHERE projid=? AND sprno=? FOR UPDATE',array($projid,$sprno));
+        $project=$this->db->query('SELECT kkp FROM mproj WHERE projid=? FOR UPDATE',array($projid))->row();
+        if (!$project) { $this->db->trans_rollback();$this->respond(array('message'=>'Proyek tidak ditemukan.'),404);return; }
+        $project_kkp=(int)$project->kkp;$kpp=$project_kkp;
         $retry=$this->db->get_where('tpencairan',array('request_key'=>$key))->row();
         if ($retry) {
             $this->db->trans_rollback();
@@ -74,9 +80,9 @@ class Pencairan extends CI_Controller
         $categories=$this->db->order_by('id')->get('mretensi_kategori')->result();
         $available=$plafon-$kpp;
         if ($latest) {
-            $plafon=(int)$latest->plafon;$kpp=0;$paid=0;$old_kpp=0;
-            foreach ($history as $item) { $paid+=(int)$item->jumlah;$old_kpp+=(int)$item->potongan_kpp; }
-            $available=$plafon-$old_kpp-$paid;
+            $plafon=(int)$latest->plafon;$kpp=0;$paid=0;
+            foreach ($history as $item) $paid+=(int)$item->jumlah;
+            $available=$plafon-$project_kkp-$paid;
             if ($available<=0) { $this->db->trans_rollback();$this->respond(array('message'=>'Pencairan sudah lengkap. Sisa pencairan Rp 0.'),409);return; }
             $categories=array();
             foreach ($this->db->get_where('tpencairan_retensi',array('pencairan_id'=>$latest->id))->result() as $line) $categories[]=(object)array('id'=>$line->kategori_id,'nama_retensi'=>$line->nama_retensi,'sisa'=>(int)$line->nilai);
@@ -90,6 +96,12 @@ class Pencairan extends CI_Controller
             $total+=$value;$lines[]=array('kategori_id'=>$category->id,'nama_retensi'=>$category->nama_retensi,'nilai'=>$value);
         }
         $net=$available-$total;
+        // Subsequent payments release only the reduction in recorded category balances.
+        if ($latest) {
+            $previous_total=0;foreach ($categories as $category) $previous_total+=$category->sisa;
+            $net=$previous_total-$total;
+            if ($net>$available) $error='Pencairan melebihi sisa plafon setelah KKP proyek. Periksa saldo retensi.';
+        }
         if ($net<=0) $error='Jumlah pencairan harus lebih dari nol. Kurangi sisa retensi yang masih ditahan untuk mencairkannya.';
         if ($error) { $this->db->trans_rollback();$this->respond(array('message'=>$error),422);return; }
         $this->db->insert('tpencairan',array('projid'=>$projid,'sprno'=>$sprno,'plafon'=>$plafon,'potongan_kpp'=>$kpp,'total_retensi'=>$total,'jumlah'=>$net,'request_key'=>$key,'created_by'=>$this->session->userdata('userid'),'created_at'=>date('Y-m-d H:i:s')));

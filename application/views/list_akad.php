@@ -41,7 +41,7 @@
       <div id="akad-export-buttons" class="text-right" style="margin-bottom:16px"></div>
       <div class="table-responsive">
         <table id="akad-table" class="table table-striped table-bordered table-hover" data-title="<?php echo html_escape($title); ?>" data-url="<?php echo site_url('home/akad_data/' . $projid . '/' . $metric); ?>" data-projid="<?php echo (int)$projid; ?>">
-          <thead><tr><th>No SPR</th><th>Lot</th><th>Blok/No</th><th>Konsumen</th><th>Jumlah Plafon</th><th>KPP</th><th>Jumlah Pencairan</th><th>Jumlah Retensi</th><th>Sisa Pencairan</th><th>Pilihan</th></tr></thead>
+          <thead><tr><th>No SPR</th><th>Lot</th><th>Blok/No</th><th>Konsumen</th><th>Jumlah Plafon</th><th>KKP</th><th>Jumlah Pencairan</th><th>Jumlah Retensi</th><th>Sisa Pencairan</th><th>Pilihan</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -51,6 +51,6 @@
 </div>
 <?php $this->load->view('modal_pencairan'); ?>
 <?php $this->load->view('footer'); ?>
-<script src="<?php echo $this->config->item('assets'); ?>/js/pencairan.js?v=6"></script>
+<script src="<?php echo $this->config->item('assets'); ?>/js/pencairan.js?v=8"></script>
 
 <script src="<?php echo $this->config->item('assets'); ?>/js/akad-export.js?v=2"></script>

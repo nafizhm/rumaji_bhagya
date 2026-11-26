@@ -18,8 +18,8 @@
   return $.getJSON(base+'/data/'+project+'/'+spr).done(function(data){
    form[0].reset();Object.keys({projid:1,sprno:1,token:1,request_key:1,base_id:1}).forEach(function(key){form.find('[name="'+key+'"]').val(key==='projid'?project:key==='sprno'?spr:data[key]);});
    $('#pencairan-customer').text('SPR '+spr+' · '+data.spr.blok+'/'+data.spr.no+' · '+data.spr.nama);
-   stage=Number(data.base_id);available=Number(data.sisa);$('#pencairan-plafon').val(Math.round(Number(data.plafon)||0)).prop('readonly',!!stage);$('#pencairan-kpp').val(0).prop('readonly',!!stage);
-   $('#pencairan-stage-note').text(stage?'Pencairan lanjutan. Saldo tersedia: '+rupiah(available)+'. Isi nominal yang ingin dicairkan di sebelah kanan, maksimal sesuai saldo di kiri. Plafon dan KPP awal tidak dipotong ulang.':'Pencairan awal: plafon dikurangi KPP dan retensi.');
+   stage=Number(data.base_id);available=Number(data.sisa);$('#pencairan-plafon').val(Math.round(Number(data.plafon)||0)).prop('readonly',!!stage);$('#pencairan-kpp').val(Number(data.kkp)||0).prop('readonly',true);
+   $('#pencairan-stage-note').text(stage?'Pencairan lanjutan. Saldo tersedia: '+rupiah(available)+'. Isi nominal yang ingin dicairkan di sebelah kanan, maksimal sesuai saldo di kiri. Plafon dan KKP awal tidak dipotong ulang.':'Pencairan awal: plafon dikurangi KKP dan retensi.');
    var container=$('#pencairan-categories').empty();
    $('#pencairan-retensi-title').text(stage?'Pencairan Retensi':'Retensi yang Ditahan');
    $('#pencairan-plafon,#pencairan-kpp').closest('.form-group').prop('hidden',!!stage);

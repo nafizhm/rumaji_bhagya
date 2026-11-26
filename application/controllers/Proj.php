@@ -67,7 +67,10 @@ function input_pt()	{		$this->lib->check_auth($this->session->userdata('roleid')
 
 	function do_input_proj()
 	{
+		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'C');
+		$kkp=$this->kkp_value();if ($kkp===NULL) return;
 		$proj = array(
+			'kkp' => $kkp,
 			'namproj' => $this->input->post('txt_namproj'),
 			'idext' => strtoupper($this->input->post('txt_idext')),
 			'status' => $this->input->post('cb_status'),
@@ -101,6 +104,7 @@ function input_pt()	{		$this->lib->check_auth($this->session->userdata('roleid')
 		$data['default']['txt_projid'] = $row->projid;
 		$data['default']['txt_namproj'] = $row->namproj;
 		$data['default']['txt_idext'] = $row->idext;
+		$data['default']['txt_kkp'] = $row->kkp;
 
 		$data['stat'] = $this->lib->generate_cb_stat($row->status, 'PRJ');
 		$data['pt'] = $this->lib->generate_cb_pt($row->ptid);
@@ -111,8 +115,10 @@ function input_pt()	{		$this->lib->check_auth($this->session->userdata('roleid')
 	function do_edit_proj()
 	{
 		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'U');
+		$kkp=$this->kkp_value();if ($kkp===NULL) return;
 
 		$proj = array(
+			'kkp' => $kkp,
 			'namproj' => $this->input->post('txt_namproj'),
 			'idext' => strtoupper($this->input->post('txt_idext')),
 			'status' => $this->input->post('cb_status'),
@@ -125,5 +131,17 @@ function input_pt()	{		$this->lib->check_auth($this->session->userdata('roleid')
 
 		$this->session->set_flashdata('ok', 'Data project telah diubah');
 		redirect('proj');
+	}
+
+	private function kkp_value()
+	{
+		$value=$this->input->post('txt_kkp');
+		if ($value===NULL || $value==='') return '0';
+		if (!is_scalar($value) || !preg_match('/^(?:[0-9]{1,13}|[0-9]{1,3}(?:\.[0-9]{3}){1,4})$/D',(string)$value)) {
+			show_error('Nilai KKP harus berupa rupiah bulat, maksimal 13 digit.',422);return NULL;
+		}
+		$value=str_replace('.','',(string)$value);
+		if (strlen($value)>13) { show_error('Nilai KKP maksimal 13 digit.',422);return NULL; }
+		return $value;
 	}
 }

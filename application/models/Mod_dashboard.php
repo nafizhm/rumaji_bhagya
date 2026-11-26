@@ -42,12 +42,13 @@ class Mod_dashboard extends CI_Model
             if ($metric === 'spr') $this->db->where_not_in('d.status', array('BTL','AKD','BLA','AKS'));
             if (in_array($metric, array('subsidi','komersial','akad'), TRUE)) {
                 $this->db->where_in('d.status', array('AKD','AKS'));
+                $this->db->join('mproj project','project.projid=d.projid');
                 if ($metric!=='akad') $this->db->where($metric === 'subsidi' ? 'd.jenis <>' : 'd.jenis', 'Komersial');
                 $project_sql = $this->db->escape($projid);
                 $this->db->join("(SELECT projid,blok,no,MAX(sprno) sprno FROM tsprh WHERE projid=".$project_sql." AND status <> 'BTL' GROUP BY projid,blok,no) latest", 'latest.projid=d.projid AND latest.blok=d.blok AND latest.no=d.no', 'left', FALSE);
                 $this->db->join('tsprh h', 'h.projid=latest.projid AND h.blok=latest.blok AND h.no=latest.no AND h.sprno=latest.sprno', 'left');
                 $this->db->join("(SELECT projid,sprno,MIN(id) id,MAX(plafon) plafon,SUM(potongan_kpp) potongan_kpp,SUM(jumlah) jumlah,GREATEST(0,MAX(plafon)-SUM(potongan_kpp)-SUM(jumlah)) total_retensi FROM tpencairan WHERE projid=".$project_sql." GROUP BY projid,sprno) cair",'cair.projid=h.projid AND cair.sprno=h.sprno','left',FALSE);
-                $remaining = 'GREATEST(0, COALESCE(cair.plafon,h.kpr,0)-COALESCE(cair.potongan_kpp,0)-COALESCE(cair.jumlah,0))';
+                $remaining = 'GREATEST(0, COALESCE(cair.plafon,h.kpr,0)-COALESCE(project.kkp,0)-COALESCE(cair.jumlah,0))';
                 if ($payment_status === 'lunas') $this->db->where('cair.id IS NOT NULL', NULL, FALSE)->where($remaining . ' = 0', NULL, FALSE);
                 if ($payment_status === 'belum') $this->db->where('(cair.id IS NULL OR ' . $remaining . ' > 0)', NULL, FALSE);
                 if ($search !== '') $this->db->group_start()->like('h.nama',$search)->or_like('h.sprno',$search)->or_like('d.lot',$search)->or_like('d.blok',$search)->or_like('d.no',$search)->group_end();

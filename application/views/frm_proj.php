@@ -63,6 +63,12 @@
                         </div>
                       </div>
                       
+                      <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="txt_kkp">Nilai KKP (Rp)</label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <input name="txt_kkp" id="txt_kkp" class="form-control" type="text" inputmode="numeric" maxlength="17" value="<?php echo html_escape(set_value('txt_kkp',isset($default['txt_kkp'])?number_format($default['txt_kkp'],0,',','.'):'0')); ?>">
+                        </div>
+                      </div>
                       <div class="ln_solid"></div>
                       <div class="form-group">
                         <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
@@ -80,4 +86,5 @@
         </div>
         <!-- /page content -->
 <?php $this->load->view('footer'); ?>
+<script>jQuery(function($){$('#txt_kkp').on('input',function(){var value=this.value.replace(/[^0-9]/g,'').slice(0,13);this.value=value?Number(value).toLocaleString('id-ID'):'';});});</script>
       

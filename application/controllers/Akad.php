@@ -85,8 +85,9 @@ class Akad extends CI_Controller
         if (!$akad) { show_404(); return; }
         $history=$this->mod_akad->disbursements($akad->projid,$akad->sprno);
         $plafon=$history ? (float)$history[0]->plafon : (float)$akad->kpr;
-        $kpp=0;$cair=0;$retensi=0;
-        foreach ($history as $item) { $kpp+=(float)$item->potongan_kpp;$cair+=(float)$item->jumlah; }
+        $project=$this->db->select('kkp')->get_where('mproj',array('projid'=>(int)$akad->projid))->row();
+        $kpp=$project?(float)$project->kkp:0;$cair=0;$retensi=0;
+        foreach ($history as $item) $cair+=(float)$item->jumlah;
         $retensi=max(0,$plafon-$kpp-$cair);
         $payments=$this->mod_akad->payments($akad->projid,$akad->sprno);
         $dibayar=0;

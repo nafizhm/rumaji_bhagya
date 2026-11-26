@@ -33,7 +33,7 @@ class Retensi extends CI_Controller
         if (!$this->mod_retensi->permission('r')) { show_error('Anda tidak memiliki akses Kategori Retensi.', 403); return; }
         if (!$this->session->userdata('retensi_token')) $this->session->set_userdata('retensi_token', bin2hex(random_bytes(32)));
         $data = array('title' => 'Kategori Retensi', 'can_create' => $this->mod_retensi->permission('c'), 'can_update' => $this->mod_retensi->permission('u'), 'can_delete' => $this->mod_retensi->permission('d'));
-        $this->load->view('list_retensi', $data);
+        $this->load->view('kategori_retensi', $data);
     }
 
     public function data()

@@ -125,7 +125,8 @@ class Home extends CI_Controller {
 	function akad_data($projid = NULL, $metric = 'subsidi')
 	{
 		$this->lib->check_auth($this->session->userdata('roleid'),'PJ','M002','R');
-        if (!in_array($metric,array('subsidi','komersial','akad'),TRUE) || !$this->mod_proj->edit_proj($projid)->row()) { show_404(); return; }
+        $project=$this->mod_proj->edit_proj($projid)->row();
+        if (!in_array($metric,array('subsidi','komersial','akad'),TRUE) || !$project) { show_404(); return; }
 		$status=(string)$this->input->get('status_pencairan');
 		$status=in_array($status,array('lunas','belum'),TRUE)?$status:'';
 		$search=$this->input->get('search');
@@ -142,6 +143,7 @@ class Home extends CI_Controller {
 		$rows=$this->mod_dashboard->details($projid,$metric,$start,$status,$length,$search,$column,$direction);
 		foreach ($rows as $row) {
 			$row->plafon=$row->plafon_pencairan!==NULL?$row->plafon_pencairan:$row->kpr;
+			$row->potongan_kpp=(float)$project->kkp;
 			$row->sisa=max(0,(float)$row->plafon-(float)$row->potongan_kpp-(float)$row->jumlah_pencairan);
 			foreach (array('potongan_kpp','jumlah_pencairan','total_retensi') as $amount_field) $row->$amount_field=(float)$row->$amount_field;
 			$row->detail_url=$row->sprno!==NULL?site_url('akad/detail/'.(int)$projid.'/'.(int)$row->sprno):site_url('kav/edit_kav/'.(int)$projid.'/'.rawurlencode($row->blok).'/'.rawurlencode($row->no));
