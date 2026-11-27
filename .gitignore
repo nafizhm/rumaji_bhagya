@@ -1,3 +1,6 @@
 /application/config/database.php
 /application/config/config.php
 /.tmp/
+
+# Ignore SQL files in every directory (including uppercase extensions).
+*.[sS][qQ][lL]
