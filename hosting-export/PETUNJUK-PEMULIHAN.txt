@@ -1,0 +1,12 @@
+PEMULIHAN IMPOR HOSTING
+
+1. Pilih database tujuan yang benar di phpMyAdmin (database yang mengalami error).
+2. Import u1064161_rumajiapp-hosting-pemulihan.zip.
+3. Tunggu sampai impor selesai.
+
+File ini membuat dan mengisi hanya tabel yang belum ada, lalu melengkapi indeks, foreign key, dan AUTO_INCREMENT yang belum terpasang.
+Data pada tabel yang sudah ada tidak dimasukkan ulang. View yang sudah ada tidak dihapus atau diubah.
+Tidak ada procedure, trigger, DEFINER, atau collation utf8mb4_0900_ai_ci.
+
+Batasan: data tabel yang sudah ada dianggap sudah lengkap. File ini tidak mengisi baris yang mungkin hilang di dalam tabel yang sudah ada.
+Tidak perlu menghapus database atau view untuk menjalankan file pemulihan ini.

@@ -274,7 +274,7 @@ class Mod_pengajuan_akad extends CI_Model
                 $key=array('pengajuan_id'=>$id,'projid'=>$row['projid'],'sprno'=>$row['sprno']);
                 // Updating selection/attendance must preserve every saved cost field.
                 if (isset($old[$row['projid'].':'.$row['sprno']])) $this->db->where($key)->update('tpengajuan_akad_peserta',array('hadir'=>$old[$row['projid'].':'.$row['sprno']]->hadir));
-                else $this->db->insert('tpengajuan_akad_peserta',array_merge($key,array('hadir'=>$old[$row['projid'].':'.$row['sprno']]->hadir)));
+                else $this->db->insert('tpengajuan_akad_peserta',array_merge($key,array('hadir'=>0)));
             }
             $header=array('updated_at'=>date('Y-m-d H:i:s'));
             if ($finish) $header['peserta_closed_at']=$header['updated_at'];

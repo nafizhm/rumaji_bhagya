@@ -65,7 +65,7 @@ table.grid { width:100%; border-collapse:collapse; table-layout:fixed; }
 <div class="toolbar"><button type="button" onclick="window.print()">Cetak / Simpan PDF</button></div>
 <?php foreach ($pages as $pageIndex=>$pageUnits): ?>
 <article class="sheet">
-<h1>RILIS JUAL RUMAJI</h1>
+<h1>RILIS JUAL</h1>
 <div class="document-no">NO : &nbsp; <?php echo trim($row->nomor_surat)!=='' ? html_escape($row->nomor_surat) : '______________________________'; ?></div>
 <table class="meta">
 <tr><td>NAMA PERUMAHAN</td><td>: <?php echo $project ? html_escape($project->namproj) : ''; ?></td></tr>

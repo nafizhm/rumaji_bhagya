@@ -1,3 +1,16 @@
+<?php
+// A partially uploaded module must not interrupt every page while rendering navigation.
+$optionalMenuAccess=function($mid,$accessTable,$requiredTables,$moduleFile) {
+    $ci =& get_instance();
+    if (!is_file(APPPATH.'controllers/'.$moduleFile.'.php')) return FALSE;
+    foreach (array_merge(array($accessTable),$requiredTables) as $table) if (!$ci->db->table_exists($table)) return FALSE;
+    if ($ci->session->userdata('roleid')==='ADM') return TRUE;
+    $user=$ci->db->get_where($accessTable,array('userid'=>$ci->session->userdata('userid')))->row();
+    if ($user) return !empty($user->r);
+    $role=$ci->db->get_where('mauth',array('roleid'=>$ci->session->userdata('roleid'),'moid'=>'PJ','mid'=>$mid))->row();
+    return $role && !empty($role->r);
+};
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -232,7 +245,7 @@
                       <li><a href="<?php echo site_url('akad'); ?>">List Akad</a></li>
                       <li><a href="<?php echo site_url('pengajuan_akad'); ?>">Pengajuan Akad</a></li>
                       <li><a href="<?php echo site_url('akad/retensi'); ?>">List Retensi</a></li>
-                      <?php $retensiMenuCI =& get_instance();$retensiMenuCI->load->model('mod_pengajuan_retensi');if ($retensiMenuCI->mod_pengajuan_retensi->permission('r')): ?><li><a href="<?php echo site_url('pengajuan_retensi'); ?>">Pengajuan Pencairan Retensi</a></li><?php endif; ?>
+                      <?php if ($optionalMenuAccess('T003','mpengajuan_retensi_akses_user',array('tpengajuan_retensi','tpengajuan_retensi_detail'),'Pengajuan_retensi')): ?><li><a href="<?php echo site_url('pengajuan_retensi'); ?>">Pengajuan Pencairan Retensi</a></li><?php endif; ?>
                     </ul>
                   </li>
                   <li><a><i class="fa fa-book"></i> SPR <span class="fa fa-chevron-down"></span></a>
@@ -262,7 +275,7 @@
                   <?php $this->load->view('menu_retensi'); ?>
                   <li><a href="<?php echo site_url('notaris'); ?>"><i class="fa fa-briefcase"></i> Notaris</a></li>
                   <li><a href="<?php echo site_url('lot'); ?>"><i class="fa fa-th-large"></i> Pengaturan Lot</a></li>
-                  <?php $siteplanMenuCI =& get_instance();$siteplanMenuCI->load->model('mod_siteplan_status');if ($siteplanMenuCI->mod_siteplan_status->permission('r')): ?><li><a href="<?php echo site_url('pengaturan_siteplan'); ?>"><i class="fa fa-paint-brush"></i> Pengaturan Siteplan</a></li><?php endif; ?>
+                  <?php if ($optionalMenuAccess('M009','msiteplan_status_akses_user',array('msiteplan_status'),'Pengaturan_siteplan')): ?><li><a href="<?php echo site_url('pengaturan_siteplan'); ?>"><i class="fa fa-paint-brush"></i> Pengaturan Siteplan</a></li><?php endif; ?>
                   <li><a><i class="fa fa-sitemap"></i> Project <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo site_url('proj/input_proj'); ?>">Tambah Project</a></li>

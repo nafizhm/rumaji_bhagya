@@ -98,3 +98,16 @@ ERROR - 2026-11-27 07:38:55 --> Severity: 8192 --> Creation of dynamic property 
 ERROR - 2026-11-27 07:38:55 --> Severity: 8192 --> Creation of dynamic property Pengajuan_retensi::$mod_rab is deprecated D:\1_laragon\www\rumaji\system\core\Loader.php 358
 ERROR - 2026-11-27 07:38:55 --> Severity: 8192 --> Creation of dynamic property Pengajuan_retensi::$lib is deprecated D:\1_laragon\www\rumaji\system\core\Loader.php 1283
 ERROR - 2026-11-27 07:38:55 --> Severity: Warning --> Cannot modify header information - headers already sent by (output started at D:\1_laragon\www\rumaji\system\core\Exceptions.php:271) D:\1_laragon\www\rumaji\system\helpers\url_helper.php 564
+ERROR - 2026-11-27 10:27:03 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 290, NULL)
+ERROR - 2026-11-27 10:27:03 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 322, NULL)
+ERROR - 2026-11-27 10:27:03 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 300, NULL)
+ERROR - 2026-11-27 10:27:03 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 288, NULL)
+ERROR - 2026-11-27 10:27:03 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 307, NULL)
+ERROR - 2026-11-27 10:27:18 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 290, NULL)
+ERROR - 2026-11-27 10:27:18 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 322, NULL)
+ERROR - 2026-11-27 10:27:18 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 300, NULL)
+ERROR - 2026-11-27 10:31:50 --> 404 Page Not Found: 
+ERROR - 2026-11-27 10:39:43 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 254, NULL)
+ERROR - 2026-11-27 10:39:43 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 290, NULL)
+ERROR - 2026-11-27 10:39:43 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 322, NULL)
+ERROR - 2026-11-27 10:39:43 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 300, NULL)

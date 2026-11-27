@@ -13,7 +13,6 @@
 <div class="logo-frame"><img src="<?php echo $this->config->item('assets'); ?>/img/bhagya-white.svg" alt="Bhagya Group"></div>
 <span class="eyebrow form-eyebrow">PORTAL PENGELOLAAN PERUMAHAN</span>
 <h2 id="login-title">Selamat datang kembali</h2><p class="intro">Masuk ke akun Anda untuk memulai aktivitas.</p>
-<div class="messages"><?php $this->lib->disp_msg(); ?></div>
 <form action="<?php echo html_escape($form_action); ?>" method="post">
 <?php if ($this->config->item('csrf_protection')): ?>
 <input type="hidden" name="<?php echo html_escape($this->security->get_csrf_token_name()); ?>" value="<?php echo html_escape($this->security->get_csrf_hash()); ?>">
@@ -29,7 +28,6 @@
 var toggle=document.getElementById('toggle-password'),password=document.getElementById('txt_pass');
 toggle.hidden=false;
 toggle.addEventListener('click',function(){var visible=password.type==='password';password.type=visible?'text':'password';toggle.textContent=visible?'Sembunyi':'Lihat';toggle.setAttribute('aria-pressed',String(visible));});
-document.querySelectorAll('.messages .close').forEach(function(button){button.addEventListener('click',function(){button.parentNode.remove();});});
 }());
 </script>
 </body></html>

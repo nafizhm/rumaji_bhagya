@@ -1,0 +1,7 @@
+PILIH FILE SESUAI KONDISI
+
+1. Jika impor berhenti tepat saat CREATE TABLE tbooking dengan error Unknown collation utf8mb4_0900_ai_ci, import u1064161_rumajiapp-hosting-lanjut-tbooking.zip ke database yang sama. File ini meneruskan dari tbooking dan tidak mengulang tabel yang sudah masuk sebelumnya.
+
+2. Untuk impor baru pada database yang tabel datanya masih kosong, gunakan u1064161_rumajiapp-hosting-clean.zip.
+
+Kedua versi telah memakai utf8mb4_unicode_ci sebagai pengganti collation khusus MySQL 8. View cetak_byr_v yang sudah ada dipertahankan. File sumber asli tidak diubah.

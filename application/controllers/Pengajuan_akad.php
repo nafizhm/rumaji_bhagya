@@ -79,6 +79,16 @@ class Pengajuan_akad extends CI_Controller
         $this->load->view('biaya_pengajuan_akad',array('title'=>'Biaya Akad','row'=>$row,'project'=>$project,'rows'=>$this->mod_pengajuan_akad->selected_participants($row->id),'cost_fields'=>$this->mod_pengajuan_akad->cost_fields()));
     }
 
+    public function cetak_biaya($id=0)
+    {
+        $this->authorize('r');$row=$this->mod_pengajuan_akad->find($id);
+        if (empty($row->biaya_closed_at)) { show_error('Biaya akad harus Closed sebelum dicetak.',409);return; }
+        $project=$row->projid ? $this->db->get_where('mproj',array('projid'=>$row->projid))->row() : NULL;
+        $this->load->library('akad_biaya_pdf');
+        $pdf=$this->akad_biaya_pdf->generate($row,$project,$this->mod_pengajuan_akad->selected_participants($row->id),$this->mod_pengajuan_akad->cost_fields());
+        $this->output->set_content_type('application/pdf')->set_header('Content-Disposition: inline; filename="biaya-akad-'.(int)$row->id.'.pdf"')->set_output($pdf);
+    }
+
     public function save_costs()
     {
         $this->authorize('u');$this->mutation();$id=(int)$this->input->post('id');$this->mod_pengajuan_akad->find($id);

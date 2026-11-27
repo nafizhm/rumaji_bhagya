@@ -4,6 +4,7 @@
 <div class="x_title"><h2>Biaya Akad</h2><div class="clearfix"></div></div>
 <div class="x_content">
 <?php $this->lib->disp_msg(); ?>
+<?php if ($isClosed): ?><p><a class="btn btn-info" target="_blank" rel="noopener" href="<?php echo site_url('pengajuan_akad/cetak_biaya/'.(int)$row->id); ?>"><i class="fa fa-print"></i> Cetak PDF</a></p><?php endif; ?>
 <dl class="dl-horizontal"><dt>Nama Proyek</dt><dd><?php echo $project ? html_escape($project->namproj) : 'Belum dipilih'; ?></dd><dt>Kode Akad</dt><dd><?php echo html_escape($row->kode_akad); ?></dd><dt>Tanggal Akad</dt><dd><?php echo date('d-m-Y',strtotime($row->tanggal_akad)); ?></dd><dt>Status</dt><dd><span id="akad-cost-status" class="label <?php echo $isClosed ? 'label-default' : 'label-success'; ?>"><?php echo $isClosed ? 'Closed' : 'Open'; ?></span></dd></dl>
 <div id="akad-cost-error" class="alert alert-danger" role="alert" hidden></div>
 <?php echo form_open('pengajuan_akad/save_costs',array('id'=>'akad-cost-form','data-editable'=>$canUpdate ? '1' : '0','data-return-url'=>$return_url,'data-closed'=>$isClosed ? '1' : '0')); ?>

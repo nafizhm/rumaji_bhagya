@@ -10,11 +10,17 @@
 .pengajuan-list-table .akad-amount{text-align:right;white-space:nowrap;vertical-align:middle}
 .pengajuan-list-table .attendance-mismatch{background:#d9534f;color:#fff;border-radius:12px;padding:4px 9px;display:inline-block;min-width:25px}
 .pengajuan-list-table tfoot th{background:#f0f6f8}
+#pengajuan-alert-modal .modal-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)!important;margin:0;width:440px;max-width:calc(100% - 30px)}
+#pengajuan-alert-modal .modal-body{text-align:center;padding:28px 24px;white-space:pre-line;overflow-wrap:break-word}
+#pengajuan-alert-modal .modal-footer{text-align:center}
 </style>
 <div class="right_col" role="main"><div class="x_panel">
 <div class="x_title"><h2>Pengajuan Akad</h2><div class="clearfix"></div></div>
 <div class="x_content">
-<?php $this->lib->disp_msg(); ?>
+<?php $akadAlerts=array();foreach (array('ok'=>'Berhasil','error'=>'Gagal','warning'=>'Perhatian') as $key=>$label) {
+    $message=$this->session->flashdata($key);
+    if ($message) $akadAlerts[]=array('title'=>$label,'message'=>trim(strip_tags($message)));
+} ?>
 <form method="get" action="<?php echo site_url('pengajuan_akad'); ?>" class="form-inline" style="margin-bottom:15px">
 <div class="form-group"><label for="pengajuan-filter-project">Nama Proyek</label> <select id="pengajuan-filter-project" name="projid" class="form-control" onchange="this.form.submit()"><option value="0">Semua Proyek</option><?php foreach ($projects as $project): ?><option value="<?php echo (int)$project->projid; ?>" <?php echo (int)$project->projid===$projid ? 'selected' : ''; ?>><?php echo html_escape($project->namproj); ?></option><?php endforeach; ?></select></div>
 <noscript><button type="submit" class="btn btn-default">Tampilkan</button></noscript>
@@ -41,11 +47,27 @@
 </table></div>
 </div></div></div>
 <?php if ($this->mod_pengajuan_akad->permission('c') || $this->mod_pengajuan_akad->permission('u')) $this->load->view('frm_pengajuan_akad'); ?>
+<div class="modal fade" id="pengajuan-alert-modal" tabindex="-1" role="dialog" aria-labelledby="pengajuan-alert-title" aria-describedby="pengajuan-alert-message">
+<div class="modal-dialog modal-sm" role="document"><div class="modal-content">
+<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Tutup">&times;</button><h4 class="modal-title" id="pengajuan-alert-title"></h4></div>
+<div class="modal-body" id="pengajuan-alert-message" role="alert"></div>
+<div class="modal-footer"><button type="button" class="btn btn-primary" data-dismiss="modal">OK</button></div>
+</div></div></div>
 <?php $this->load->view('footer'); ?>
 <script src="<?php echo $this->config->item('assets'); ?>/js/pengajuan-akad-form.js?v=2"></script>
 
 <script>
 jQuery(function($){
+    var alerts=<?php echo json_encode($akadAlerts,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
+    function showNextAlert() {
+        if (!alerts.length) return;
+        var alert=alerts.shift();
+        $('#pengajuan-alert-title').text(alert.title);
+        $('#pengajuan-alert-message').text(alert.message);
+        $('#pengajuan-alert-modal').modal('show');
+    }
+    $('#pengajuan-alert-modal').on('shown.bs.modal',function(){ $(this).find('.modal-footer button').trigger('focus'); }).on('hidden.bs.modal',showNextAlert);
+    showNextAlert();
     $('#pengajuan-akad-list-table').DataTable({
         fixedHeader:true,order:[],
         columnDefs:[{targets:0,orderable:false,width:'28px'}],
