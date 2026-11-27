@@ -3,7 +3,7 @@
 <div class="right_col" role="main">
  <div class="akad-detail-heading"><div><p class="text-muted">AKAD / <?php echo html_escape($akad->namproj); ?></p><h3>Detail Akad</h3><p><?php echo html_escape($akad->nama); ?> · Blok <?php echo html_escape($akad->blok.'/'.$akad->no); ?> · SPR <?php echo $this->lib->no_spr($akad->sprno); ?></p></div><div><a class="btn btn-default" href="<?php echo $back_url; ?>">Kembali ke daftar akad</a><button type="button" class="btn btn-success open-pencairan" data-projid="<?php echo (int)$akad->projid; ?>" data-sprno="<?php echo (int)$akad->sprno; ?>"><i class="fa fa-money" aria-hidden="true"></i> Pencairan</button></div></div>
  <div class="akad-summary-grid">
-  <?php foreach (array('Plafon'=>$plafon,'Potongan KKP'=>$kpp,'Sudah Dicairkan'=>$cair,'Retensi'=>$retensi,'Sisa Pencairan'=>$sisa) as $label=>$amount): ?>
+  <?php foreach (array('Plafon'=>$plafon,'Potongan KMK'=>$kpp,'Sudah Dicairkan'=>$cair,'Retensi'=>$retensi,'Sisa Pencairan'=>$sisa) as $label=>$amount): ?>
   <div class="x_panel akad-summary-card"><span class="text-muted"><?php echo $label; ?></span><strong class="<?php echo $label==='Sisa Pencairan'&&$sisa>0?'text-danger':''; ?>"><?php echo $idr($amount); ?></strong></div>
   <?php endforeach; ?>
  </div>
@@ -16,9 +16,9 @@
    </dl>
   </div></section></div>
   <div class="col-md-7"><section class="x_panel"><div class="x_title"><h2>Grafik Pencairan</h2><div class="clearfix"></div></div><div class="x_content">
-   <p class="text-muted">Komposisi plafon: pencairan bersih, potongan KKP, dan sisa yang belum dicairkan.</p>
-   <?php $segments=array(array('label'=>'Sudah Dicairkan','value'=>$cair,'class'=>'cair'),array('label'=>'Potongan KKP','value'=>$kpp,'class'=>'kpp'),array('label'=>$history?'Retensi / Sisa Pencairan':'Belum Dicairkan','value'=>$sisa,'class'=>'sisa')); ?>
-   <div class="akad-chart" role="img" aria-label="<?php echo html_escape('Plafon '.$idr($plafon).', dicairkan '.$idr($cair).', KKP '.$idr($kpp).', sisa '.$idr($sisa)); ?>">
+   <p class="text-muted">Komposisi plafon: pencairan bersih, potongan KMK, dan sisa yang belum dicairkan.</p>
+   <?php $segments=array(array('label'=>'Sudah Dicairkan','value'=>$cair,'class'=>'cair'),array('label'=>'Potongan KMK','value'=>$kpp,'class'=>'kpp'),array('label'=>$history?'Retensi / Sisa Pencairan':'Belum Dicairkan','value'=>$sisa,'class'=>'sisa')); ?>
+   <div class="akad-chart" role="img" aria-label="<?php echo html_escape('Plafon '.$idr($plafon).', dicairkan '.$idr($cair).', KMK '.$idr($kpp).', sisa '.$idr($sisa)); ?>">
     <?php foreach ($segments as $segment): $percentage=$plafon>0?max(0,min(100,$segment['value']/$plafon*100)):0; ?>
      <div class="akad-chart-segment <?php echo $segment['class']; ?>" style="width:<?php echo $percentage; ?>%" title="<?php echo html_escape($segment['label'].': '.$idr($segment['value'])); ?>"></div>
     <?php endforeach; ?>
@@ -30,8 +30,8 @@
   </div></section></div>
  </div>
  <section class="x_panel"><div class="x_title"><h2>Histori Pencairan Bank</h2><div class="clearfix"></div></div><div class="x_content"><div class="table-responsive">
-  <table class="table table-bordered table-striped"><thead><tr><th>Tanggal</th><th>Plafon</th><th>KKP</th><th>Rincian Retensi</th><th>Pencairan Bersih</th><th>Dicatat Oleh</th></tr></thead><tbody>
-   <?php foreach ($history as $item): ?><tr><td><?php echo html_escape($item->created_at); ?></td><td><?php echo $idr($item->plafon); ?></td><td><?php echo $idr($item->potongan_kpp); ?></td><td><?php foreach ($item->retensi as $line): ?><div><?php echo html_escape($line->nama_retensi); ?>: <?php echo $idr($line->nilai); ?></div><?php endforeach; ?><strong>Total: <?php echo $idr($item->total_retensi); ?></strong></td><td><?php echo $idr($item->jumlah); ?></td><td><?php echo html_escape($item->created_by); ?></td></tr><?php endforeach; ?>
+  <table class="table table-bordered table-striped"><thead><tr><th>Tanggal</th><th>Plafon</th><th>KMK</th><th>Rincian Retensi</th><th>Pencairan Bersih</th><th>Dicatat Oleh</th></tr></thead><tbody>
+   <?php foreach ($history as $item): ?><tr><td><?php echo html_escape(!empty($item->tanggal_pembayaran) ? $item->tanggal_pembayaran : $item->created_at); ?></td><td><?php echo $idr($item->plafon); ?></td><td><?php echo $idr($item->potongan_kpp); ?></td><td><?php foreach ($item->retensi as $line): ?><div><?php echo html_escape($line->nama_retensi); ?>: <?php echo $idr($line->nilai); ?></div><?php endforeach; ?><strong>Total: <?php echo $idr($item->total_retensi); ?></strong></td><td><?php echo $idr($item->jumlah); ?></td><td><?php echo html_escape($item->created_by); ?></td></tr><?php endforeach; ?>
    <?php if (!$history): ?><tr><td colspan="6" class="text-center">Belum ada histori pencairan.</td></tr><?php endif; ?>
   </tbody></table>
  </div></div></section>
@@ -49,7 +49,7 @@
  </div></section>
 </div>
 <?php $this->load->view('modal_pencairan'); $this->load->view('footer'); ?>
-<script src="<?php echo $this->config->item('assets'); ?>/js/pencairan.js?v=8"></script>
+<script src="<?php echo $this->config->item('assets'); ?>/js/pencairan.js?v=12"></script>
 <script>
  (function($){var options={pageLength:25,order:[],language:{search:'Cari:',emptyTable:'Belum ada data pembayaran.',info:'Menampilkan _START_–_END_ dari _TOTAL_ data',infoEmpty:'Belum ada data',lengthMenu:'Tampilkan _MENU_ data',paginate:{next:'Berikutnya',previous:'Sebelumnya'}}};$('#akad-payments-table,#akad-schedule-table').DataTable(options);$('a[data-toggle="tab"]').on('shown.bs.tab',function(){$.fn.dataTable.tables({visible:true,api:true}).columns.adjust();});}(jQuery));
 </script>

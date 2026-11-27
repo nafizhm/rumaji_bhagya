@@ -138,10 +138,10 @@ function input_pt()	{		$this->lib->check_auth($this->session->userdata('roleid')
 		$value=$this->input->post('txt_kkp');
 		if ($value===NULL || $value==='') return '0';
 		if (!is_scalar($value) || !preg_match('/^(?:[0-9]{1,13}|[0-9]{1,3}(?:\.[0-9]{3}){1,4})$/D',(string)$value)) {
-			show_error('Nilai KKP harus berupa rupiah bulat, maksimal 13 digit.',422);return NULL;
+			show_error('Nilai KMK harus berupa rupiah bulat, maksimal 13 digit.',422);return NULL;
 		}
 		$value=str_replace('.','',(string)$value);
-		if (strlen($value)>13) { show_error('Nilai KKP maksimal 13 digit.',422);return NULL; }
+		if (strlen($value)>13) { show_error('Nilai KMK maksimal 13 digit.',422);return NULL; }
 		return $value;
 	}
 }

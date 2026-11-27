@@ -1,0 +1,39 @@
+.akad-cost-scroll{max-width:100%;overflow-x:auto;border:1px solid #ccd7db;border-radius:4px;position:relative;isolation:isolate;scrollbar-width:auto}
+.akad-cost-table{width:2484px;min-width:100%;table-layout:fixed;border-spacing:0;border-collapse:separate;font-size:13px;color:#1f2937}
+.akad-cost-table .cost-no{width:44px;min-width:44px;max-width:44px;position:sticky;left:0;z-index:2;text-align:center}
+.akad-cost-table .cost-customer{width:200px;min-width:200px;max-width:200px;position:sticky;left:44px;z-index:2;overflow-wrap:anywhere}
+.akad-cost-table .cost-unit{width:90px;min-width:90px;max-width:90px;position:sticky;left:244px;z-index:2;box-shadow:3px 0 4px #0000000c;text-align:center}
+.akad-cost-table .cost-amount-col{width:145px}.akad-cost-table .cost-bank-col{width:190px}.akad-cost-table .cost-notary-col{width:210px}
+.akad-cost-table th,.akad-cost-table td{border-right:1px solid #ccd7db;border-bottom:1px solid #ccd7db;vertical-align:middle}
+.akad-cost-table thead{position:sticky;top:0;z-index:5}
+.akad-cost-table thead th{background:#079797;color:#fff;font-weight:600;text-align:center;padding:10px 8px}
+.akad-cost-table thead tr:first-child th{font-size:15px}
+.akad-cost-table thead .cost-section-title{text-align:left}
+.cost-section-title span{position:sticky;left:350px;display:inline-block}
+.akad-cost-table thead .cost-no,.akad-cost-table thead .cost-customer,.akad-cost-table thead .cost-unit{z-index:6}
+.akad-cost-table tbody td{background:#fff;padding:5px 7px}
+.akad-cost-table tbody tr:nth-child(even) td{background:#f9fcfc}
+.akad-cost-table tbody .cost-customer,.akad-cost-table tbody .cost-unit{padding:10px}
+.cost-input{width:100%;min-width:0;background:transparent;color:inherit;border:1px solid transparent;border-radius:3px;box-shadow:none;padding:8px 4px;font:inherit;line-height:1.4}
+.cost-input:focus{border-color:#439cca;outline:2px solid #b0dcf4;background:#fff}
+.cost-money{text-align:right;font-variant-numeric:tabular-nums}
+.cost-text{text-align:left}.cost-input:disabled{opacity:1;cursor:default}
+.cost-input[readonly]{background:#eaf4f5;font-weight:600;cursor:default}
+.akad-cost-table thead .cost-fill-header{position:relative;padding-bottom:28px}
+.cost-fill-down{position:absolute;right:4px;bottom:4px;display:flex;align-items:center;justify-content:center;width:23px;height:23px;padding:3px;border:1px solid #ffffff66;border-radius:4px;background:#ffffff1f;color:#fff;cursor:pointer}
+.cost-fill-down:hover:not(:disabled){background:#ffffff40;border-color:#fff}
+.cost-fill-down:disabled{opacity:.3;cursor:default}
+.cost-fill-down:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.akad-cost-table tfoot{position:sticky;bottom:0;z-index:4}
+.akad-cost-table tfoot th,.akad-cost-table tfoot td{background:#efd03c;color:#171a19;font-weight:700;text-align:right;padding:12px 9px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.akad-cost-table .cost-total-label{position:sticky;left:0;z-index:5;text-align:left}
+.cost-actions{margin-top:15px}.cost-scroll-hint{margin:9px 0;font-size:12px}
+.cost-jenis-badge{display:inline-block;margin-top:5px;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;line-height:1.4;white-space:nowrap}
+.cost-jenis-kpr{background:#dbeafe;color:#1e40af}
+.cost-jenis-cash{background:#dcfce7;color:#166534}
+.cost-jenis-komersial{background:#f3e8ff;color:#6b21a8}
+#akad-cost-error[hidden]{display:none!important}
+html[data-theme=dark] .akad-cost-table tbody td{background:#263a47;color:#e5edf5}
+html[data-theme=dark] .akad-cost-table tbody tr:nth-child(even) td{background:#2b414e}
+html[data-theme=dark] .cost-input:focus{background:#1e303c}
+@media(max-width:767px){.akad-cost-table .cost-no{width:36px;min-width:36px;max-width:36px}.akad-cost-table .cost-customer{width:145px;min-width:145px;max-width:145px;left:36px}.akad-cost-table .cost-unit{position:static;width:80px;min-width:80px;max-width:80px}.akad-cost-table tbody .cost-customer{padding:8px}.akad-cost-table .cost-total-label{position:static}.cost-section-title span{left:200px}.cost-input{font-size:16px;min-height:44px}.cost-actions .btn{margin-bottom:8px}}

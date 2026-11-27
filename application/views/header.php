@@ -230,7 +230,9 @@
                   <li><a><i class="fa fa-check-square-o"></i> AKAD <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo site_url('akad'); ?>">List Akad</a></li>
+                      <li><a href="<?php echo site_url('pengajuan_akad'); ?>">Pengajuan Akad</a></li>
                       <li><a href="<?php echo site_url('akad/retensi'); ?>">List Retensi</a></li>
+                      <?php $retensiMenuCI =& get_instance();$retensiMenuCI->load->model('mod_pengajuan_retensi');if ($retensiMenuCI->mod_pengajuan_retensi->permission('r')): ?><li><a href="<?php echo site_url('pengajuan_retensi'); ?>">Pengajuan Pencairan Retensi</a></li><?php endif; ?>
                     </ul>
                   </li>
                   <li><a><i class="fa fa-book"></i> SPR <span class="fa fa-chevron-down"></span></a>
@@ -258,6 +260,8 @@
                 <h3>Master Data</h3>
                 <ul class="nav side-menu">
                   <?php $this->load->view('menu_retensi'); ?>
+                  <li><a href="<?php echo site_url('notaris'); ?>"><i class="fa fa-briefcase"></i> Notaris</a></li>
+                  <li><a href="<?php echo site_url('lot'); ?>"><i class="fa fa-th-large"></i> Pengaturan Lot</a></li>
                   <li><a><i class="fa fa-sitemap"></i> Project <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo site_url('proj/input_proj'); ?>">Tambah Project</a></li>

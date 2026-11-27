@@ -244,12 +244,8 @@ function generate_cb_tkas($kas,$dk,$tipe)
 	//Progress Dokumen
 	function disp_prog_dok($projid, $sprno)
 	{
-		$query = $this->CI->db->query("SELECT COUNT(*) as tot FROM `tsprd` WHERE projid = '" . $projid . "' AND sprno = '" . $sprno . "'");
-		foreach ($query->result()  as $row);
-
-		//$progress = number_format(($row->tot / 10) * 100);
-		$progress = number_format(($row->tot / 11) * 100);
-		return $progress;
+		$this->CI->load->model('mod_spr');
+		return $this->CI->mod_spr->document_completion($projid,$sprno)['percent'];
 	}
 
 	//Progress Bangun
@@ -386,7 +382,6 @@ function generate_cb_tkas($kas,$dk,$tipe)
 	function check_login()
 	{
 		if ($this->CI->session->userdata('logged_in') == FALSE) {
-			$this->CI->session->set_flashdata('error', 'Anda belum login!');
 			redirect('auth/login');
 		}
 	}
@@ -917,15 +912,10 @@ function generate_cb_tkas($kas,$dk,$tipe)
 	{
 		$data['cb_stat_dok'] = '';
 		$count = 0;
-		$query = $this->CI->db->query("SELECT status, namstat, seq
-	FROM mstat WHERE statgrp = 'DOK' 
-	AND status NOT IN 
-	( SELECT status 
-	 FROM tsprd 
-	 WHERE projid = '" . $projid . "' 
-	 AND sprno = '" . $sprno . "' ) 
-	 AND seq > 0 ORDER BY seq");
-		foreach ($query->result()  as $row) {
+		$this->CI->load->model('mod_spr');
+		$completion=$this->CI->mod_spr->document_completion($projid,$sprno);
+		foreach ($completion['requirements'] as $row) {
+			if (isset($completion['completed'][$row->status])) continue;
 			$count++;
 			if ($count > 1 && $row->seq < 4) {
 				$data['cb_stat_dok'] .= '<option disabled="disabled" value="' . $row->status . '">' . $row->namstat . '</option>';

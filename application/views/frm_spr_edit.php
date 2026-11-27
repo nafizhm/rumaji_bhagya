@@ -343,16 +343,12 @@
     <label class="control-label col-md-3 col-sm-3 col-xs-12">Jenis</label>
     <div class="col-md-6 col-sm-6 col-xs-12">
         
-        <div class="radio">
-            <label>
-                <input type="radio" name="rd_jenis" value="Subsidi" <?php echo set_radio('rd_jenis', 'Subsidi', isset($jenis) ? ($jenis == 'Subsidi') : TRUE); ?> /> Subsidi
-            </label>
-        </div>
-        <div class="radio">
-            <label>
-                <input type="radio" name="rd_jenis" value="Komersial" <?php echo set_radio('rd_jenis', 'Komersial', isset($jenis) ? ($jenis == 'Komersial') : FALSE); ?> /> Komersial
-            </label>
-        </div>
+        <?php $jenis_pilihan=isset($jenis) ? $jenis : 'Subsidi KPR'; if ($jenis_pilihan==='Subsidi') $jenis_pilihan='Subsidi KPR'; ?>
+        <?php foreach (array('Subsidi KPR','Subsidi Cash','Komersial') as $pilihan): ?>
+        <div class="radio"><label>
+            <input type="radio" name="rd_jenis" value="<?php echo $pilihan; ?>" <?php echo set_radio('rd_jenis',$pilihan,$jenis_pilihan===$pilihan); ?> /> <?php echo $pilihan; ?>
+        </label></div>
+        <?php endforeach; ?>
     </div>
 </div>
 <!-- BAMS 11-03-2025 END -->
@@ -710,6 +706,7 @@
                         <tr>
                           <th>Status</th>
                           <th>Keterangan</th>
+                          <th>Notaris</th>
                           <th>Dibuat Oleh</th>
                           <th>Tgl Buat</th>
                           <th>Jam Buat</th>
@@ -722,6 +719,7 @@
                         <tr>
                           <td><?php echo $this->lib->get_status_text('KAV',$row_klog->status); ?></td>
                            <td><?php echo $row_klog->ket; ?></td>
+                          <td><?php echo html_escape(isset($row_klog->nama_notaris)?$row_klog->nama_notaris:'—'); ?></td>
                           <td><?php echo $row_klog->crby; ?></td>
                           <td><?php echo $this->lib->disp_date( $row_klog->crdat ); ?></td>
                           <td><?php echo $row_klog->crtim; ?></td>
@@ -747,6 +745,15 @@
                         </tr>
                       </thead>
                       <tbody>
+                        <?php foreach ($booking_documents as $document): $booking_file_url=site_url('spr/booking_file/'.(int)$row_sprh->projid.'/'.(int)$row_sprh->sprno.'/'.rawurlencode($document->key)); ?>
+                        <tr>
+                         <td><?php echo html_escape($document->nama); ?> <span class="label label-info">Dari Booking</span></td>
+                         <td><?php echo html_escape(pathinfo($document->file,PATHINFO_EXTENSION)); ?></td>
+                         <td><?php echo $document->size; ?></td><td><?php echo $document->exists?'Tersedia':'Berkas tidak ditemukan'; ?></td>
+                         <td><?php echo html_escape($document->marketing); ?></td><td><?php echo html_escape($document->created_at); ?></td>
+                         <td><?php if ($document->exists): ?><button type="button" class="btn btn-success btn-sm spr-booking-view" data-url="<?php echo html_escape($booking_file_url.'?view=1'); ?>" data-mime="<?php echo html_escape($document->mime); ?>" data-title="<?php echo html_escape($document->nama); ?>"><i class="fa fa-search-plus"></i> Lihat Dokumen</button> <a class="btn btn-primary btn-sm" href="<?php echo html_escape($booking_file_url); ?>"><i class="fa fa-download"></i> Download</a><?php endif; ?></td>
+                        </tr>
+                        <?php endforeach; ?>
                         <?php foreach($sprd as $row_sprd)  
 						{
 						?>
@@ -847,6 +854,7 @@
                                     <!-- Modal body-->
                                     <div class="modal-body">
                                      <form id="form_status" class="form-horizontal form-label-left" method="post" action="<?php echo $form_status; ?>">
+                                     <input type="hidden" name="status_token" value="<?php echo html_escape($this->session->userdata('spr_status_token')); ?>">
                                      <input type="hidden" name="txt_kav_sprno" value="<?php echo $row_sprh->sprno;?>" />
                                      <input type="hidden" name="txt_kav_proj" value="<?php echo $row_sprh->projid;?>" />
                                       <input type="hidden" name="txt_kav_blok" value="<?php echo $row_sprh->blok;?>" />
@@ -859,6 +867,13 @@
                                           <?php echo $this->lib->generate_cb_stat_kav($row_sprh->projid,$row_sprh->blok,$row_sprh->no); ?>
                                            </select>
                                            </div>
+                                       </div>
+                                       <div class="form-group" id="status-notaris-group" style="display:none">
+                                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="status-notaris">Nama Notaris *</label>
+                                        <div class="col-md-6 col-sm-6 col-xs-12">
+                                         <select class="form-control" name="notaris_id" id="status-notaris" disabled><option value="">Pilih notaris</option><?php foreach ($notaris_list as $notaris): ?><option value="<?php echo (int)$notaris->id; ?>"><?php echo html_escape($notaris->nama_notaris); ?></option><?php endforeach; ?></select>
+                                         <?php if (!$notaris_list): ?><p class="text-danger">Data notaris belum ada. Tambahkan melalui Master Data → Notaris.</p><?php endif; ?>
+                                        </div>
                                        </div>
                                          
                                           <div class="form-group">
@@ -1745,3 +1760,11 @@ $( "#cb_byrb" ).change(function() {
 ?>
 
 
+<script>
+jQuery(function($){
+ function toggleNotaris(){var akad=['AKD','AKS'].indexOf($('#cb_stat').val())!==-1;$('#status-notaris-group').toggle(akad);$('#status-notaris').prop('disabled',!akad).prop('required',akad);}
+ $('#cb_stat').on('change',toggleNotaris);$('#statusModal').on('show.bs.modal',toggleNotaris);toggleNotaris();
+});
+</script>
+
+<?php $this->load->view('spr_booking_documents_modal'); ?>

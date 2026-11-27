@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS mnotaris_akses_user (
+ userid VARCHAR(10) NOT NULL PRIMARY KEY,
+ c TINYINT(1) NOT NULL DEFAULT 0,
+ r TINYINT(1) NOT NULL DEFAULT 0,
+ u TINYINT(1) NOT NULL DEFAULT 0,
+ d TINYINT(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO mnotaris_akses_user (userid,c,r,u,d)
+SELECT userid,1,1,1,1 FROM muser WHERE userid='faizal'
+ON DUPLICATE KEY UPDATE c=1,r=1,u=1,d=1;

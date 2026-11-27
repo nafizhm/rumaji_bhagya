@@ -517,6 +517,9 @@ function check_spr()
 function do_input_spr()
 {
 	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
+	$jenis_spr=$this->input->post('rd_jenis');
+	if ($jenis_spr==='Subsidi') $jenis_spr='Subsidi KPR';
+	if (!in_array($jenis_spr,array('Subsidi KPR','Subsidi Cash','Komersial'),TRUE)) { show_error('Pilih jenis Subsidi KPR, Subsidi Cash, atau Komersial.',422);return; }
 	$booking_source=NULL;
 	if ($this->input->post('booking_id')) {
 		$booking_source=$this->db->get_where('tbooking',array('id'=>(int)$this->input->post('booking_id'),'projid'=>$this->input->post('txt_projid'),'blok'=>$this->input->post('txt_blok'),'no'=>$this->input->post('txt_no')))->row();
@@ -642,18 +645,10 @@ function do_input_spr()
 	}
 	
 	
-//bams 13-04-2025
-		$myppn = (int) $this->input->post('txt_ppn');
-		$myjenis = 'Subsidi';
-		if ($myppn > 0) {
-			$myjenis = 'Komersial';
-		}
-//bams 13-04-2025
-
-		$kav = array( 
-			'status' => 'SPR',
-			'jenis' => $myjenis
-		);
+	$kav = array(
+		'status' => 'SPR',
+		'jenis' => $jenis_spr
+	);
 
 
 	// $kav = array( 
@@ -900,6 +895,8 @@ function edit_spr()
 	
 	$sprd = $this->mod_spr->list_sprd($this->uri->segment(3),$this->uri->segment(4))->result();
 	$data['sprd'] = $sprd;
+	$this->load->model('mod_booking');
+	$data['booking_documents']=$this->mod_booking->documents_for_spr((int)$this->uri->segment(4),(int)$this->uri->segment(3));
 	
 	$kwt = $this->mod_kwt->get_kwt_spr($this->uri->segment(4),$this->uri->segment(3))->result();
 	$data['kwt'] = $kwt;
@@ -979,6 +976,8 @@ function edit_spr()
 
 	$data['salesman'] = $row_slsman->kodeslsman . ' - ' . $row_slsman->namaslsman;	
 
+	$data['notaris_list']=$this->db->order_by('nama_notaris')->get('mnotaris')->result();
+	if (!$this->session->userdata('spr_status_token')) $this->session->set_userdata('spr_status_token',bin2hex(random_bytes(32)));
 	$this->load->view('frm_spr_edit',$data);
 }
 
@@ -1583,6 +1582,24 @@ $date = date("Y-m-d", strtotime("+1 month", $datenow));
 
 function do_input_status()
 {
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+	if ($this->input->method()!=='post') { show_error('Metode tidak diizinkan.',405);return; }
+	$token=$this->session->userdata('spr_status_token');
+	if (!$token || !hash_equals($token,(string)$this->input->post('status_token'))) { show_error('Sesi formulir berakhir. Muat ulang halaman SPR.',403);return; }
+	$projid=(int)$this->input->post('txt_kav_proj');$sprno=(int)$this->input->post('txt_kav_sprno');
+	$spr=$this->db->get_where('tsprh',array('projid'=>$projid,'sprno'=>$sprno,'blok'=>$this->input->post('txt_kav_blok'),'no'=>$this->input->post('txt_kav_no'),'status <>'=>'BTL'))->row();
+	if (!$spr) { show_404();return; }
+	$status=$this->input->post('cb_stat');
+	if (!$this->db->get_where('mstat',array('statgrp'=>'KAV','status'=>$status))->row()) { show_error('Status tidak valid.',422);return; }
+	$notaris=NULL;
+	if (in_array($status,array('AKD','AKS'),TRUE)) {
+		$notaris_id=$this->input->post('notaris_id');
+		if (is_scalar($notaris_id) && ctype_digit((string)$notaris_id)) $notaris=$this->db->get_where('mnotaris',array('id'=>(int)$notaris_id))->row();
+		if (!$notaris) {
+			$this->session->set_flashdata('error','Pilih nama notaris untuk status akad. Tambahkan notaris melalui Master Data jika belum tersedia.');
+			redirect('spr/edit_spr/'.$sprno.'/'.$projid);return;
+		}
+	}
 	/*$um = $this->lib->disp_prog_um($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_sprno'));
 	$dok = $this->lib->disp_prog_dok($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_sprno'));
 	$kavl = $this->lib->disp_prog_kav($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_blok'),$this->input->post('txt_kav_no'));*/
@@ -1619,11 +1636,34 @@ function do_input_status()
 		}
 	}
 	
-			$this->mod_kav->update_kav($this->input->post('txt_kav_proj'),$this->input->post('txt_kav_blok'),$this->input->post('txt_kav_no'),$kav);
-			$this->mod_kav->input_kavlog($kavlog);
-			
-		$this->session->set_flashdata('ok', 'Status berhasil ditambah');
+		$this->db->trans_begin();
+		if ($notaris) {
+			// Lock the master row so deletion cannot race with assignment.
+			$locked=$this->db->query('SELECT id,nama_notaris FROM mnotaris WHERE id=? FOR UPDATE',array($notaris->id))->row();
+			if (!$locked) { $this->db->trans_rollback();show_error('Notaris tidak tersedia. Muat ulang halaman.',409);return; }
+			$kavlog['notaris_id']=$locked->id;$kavlog['nama_notaris']=$locked->nama_notaris;
+			$this->db->where('projid',$projid)->where('sprno',$sprno)->update('tsprh',array('notaris_id'=>$locked->id));
+		}
+		$this->mod_kav->update_kav($projid,$this->input->post('txt_kav_blok'),$this->input->post('txt_kav_no'),$kav);
+		$this->mod_kav->input_kavlog($kavlog);
+		if (!$this->db->trans_status()) { $this->db->trans_rollback();$this->session->set_flashdata('error','Status gagal disimpan.'); }
+		else { $this->db->trans_commit();$this->session->set_flashdata('ok', 'Status berhasil ditambah'); }
 		redirect('spr/edit_spr/'.$this->input->post('txt_kav_sprno').'/'.$this->input->post('txt_kav_proj'));
+}
+
+public function booking_file($projid=NULL,$sprno=NULL,$key='')
+{
+    $this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'R');
+    $this->load->model('mod_booking');
+    $documents=$this->mod_booking->documents_for_spr((int)$projid,(int)$sprno);
+    if (!isset($documents[$key]) || !$documents[$key]->exists) { show_404();return; }
+    $file=$documents[$key];
+    $mime=(new finfo(FILEINFO_MIME_TYPE))->file($file->path);
+    $inline=$this->input->get('view')==='1' && in_array($mime,array('image/jpeg','image/png','image/webp','application/pdf'),TRUE);
+    $this->output->set_content_type($mime)->set_header('X-Content-Type-Options: nosniff')
+        ->set_header('Cache-Control: private, no-store')
+        ->set_header('Content-Disposition: '.($inline?'inline':'attachment').'; filename="'.basename($file->file).'"')
+        ->set_output(file_get_contents($file->path));
 }
 
 function do_upload_file()

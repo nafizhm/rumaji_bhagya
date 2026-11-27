@@ -45,7 +45,13 @@ class Akad extends CI_Controller
         }));
         $request_categories=array();
         foreach ($this->db->order_by('nama_retensi')->get('mretensi_kategori')->result() as $category) $request_categories[$category->id]=$category->nama_retensi;
-        foreach ($this->db->select('kategori_id,nama_retensi')->distinct()->get('tpencairan_retensi')->result() as $category) if (!isset($request_categories[$category->kategori_id])) $request_categories[$category->kategori_id]=$category->nama_retensi;
+        $request_names=array();foreach ($request_categories as $label) $request_names[mb_strtoupper(trim($label),'UTF-8')]=TRUE;
+        foreach ($this->db->select('kategori_id,nama_retensi')->distinct()->get('tpencairan_retensi')->result() as $category) {
+            $name=mb_strtoupper(trim($category->nama_retensi),'UTF-8');
+            if (!isset($request_categories[$category->kategori_id]) && !isset($request_names[$name])) {
+                $request_categories[$category->kategori_id]=$category->nama_retensi;$request_names[$name]=TRUE;
+            }
+        }
         $this->load->view('list_retensi',array('title'=>$project?$project->namproj.' — List Retensi':'List Retensi',
             'projects'=>$projects,'projid'=>$projid,'categories'=>$report['categories'],'rows'=>$report['rows'],'status_retensi'=>$status,'request_categories'=>$request_categories));
     }
@@ -66,7 +72,9 @@ class Akad extends CI_Controller
             else {
                 $category=$this->db->get_where('tpencairan_retensi',array('kategori_id'=>(int)$id),1)->row();
                 if (!$category) { show_error('Kategori retensi tidak valid.',422);return; }
-                $categories[$id]=$category->nama_retensi;
+                $canonical=$id;
+                foreach ($report['categories'] as $reportId=>$label) if (mb_strtoupper(trim($label),'UTF-8')===mb_strtoupper(trim($category->nama_retensi),'UTF-8')) { $canonical=$reportId;break; }
+                $categories[$canonical]=$report['categories'][$canonical] ?? $category->nama_retensi;
             }
         }
         $rows=array_values(array_filter($report['rows'],function($row) use ($categories) {

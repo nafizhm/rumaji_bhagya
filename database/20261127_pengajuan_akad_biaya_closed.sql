@@ -1,0 +1,1 @@
+ALTER TABLE tpengajuan_akad ADD COLUMN biaya_closed_at DATETIME NULL DEFAULT NULL;

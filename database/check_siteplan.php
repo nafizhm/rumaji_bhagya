@@ -39,12 +39,14 @@ $source=__DIR__.'/../application/uploads/siteplan/'.$master['source_file'];
 if (!is_file($source) || hash_file('sha256',$source)!==$master['source_hash']) throw new RuntimeException('Source archive hash mismatch.');
 // Confirm status precedence without modifying application data.
 $cases=array(
-    array('BLA',NULL,'tersedia'),array('BLA','Pending','booking'),array('BLA','Disetujui','booking'),
-    array('BLA','Ditolak','tersedia'),array('SPR','Pending','spr'),array('AKD','Disetujui','akad'),array('AKS',NULL,'akad'),array('BTL',NULL,'batal')
+    array('BLA',NULL,1,NULL,'tersedia'),array('BLA',NULL,0,NULL,'belum_rilis'),
+    array('BLA','Pending',0,NULL,'booking'),array('BLA','Disetujui',0,NULL,'booking'),
+    array('BLA','Ditolak',0,NULL,'tidak_tersedia'),array('BLA',NULL,0,7,'spr'),
+    array('SPR','Pending',0,7,'spr'),array('AKD','Disetujui',0,7,'akad'),array('AKS',NULL,0,7,'akad'),array('BTL',NULL,0,NULL,'batal')
 );
 foreach ($cases as $case) {
-    $fake=(object)array('status'=>$case[0],'booking_status'=>$case[1]);
+    $fake=(object)array('status'=>$case[0],'booking_status'=>$case[1],'ready_for_sale'=>$case[2],'sprno'=>$case[3],'booking_id'=>$case[1]!==NULL?1:NULL);
     $model->db=new class($fake) { private $row;public function __construct($row) { $this->row=$row; }public function query($sql,$params) { return new class($this->row) { private $row;public function __construct($row) { $this->row=$row; }public function result() { return array($this->row); } }; } };
-    if ($model->units($projid)[0]->state!==$case[2]) throw new RuntimeException('Status precedence failed.');
+    if ($model->units($projid)[0]->state!==$case[4]) throw new RuntimeException('Status precedence failed.');
 }
 echo json_encode(array('project'=>$projid,'stock'=>count($stock),'mapped'=>count($units),'valid_svg'=>TRUE,'source_hash'=>'matched','states'=>$states,'status_cases'=>count($cases)),JSON_PRETTY_PRINT).PHP_EOL;

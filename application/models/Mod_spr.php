@@ -17,6 +17,22 @@ class Mod_spr extends CI_Model {
 	var $t_tsprf_h			= 'tsprf_h';
 	var $t_tsprd			= 'tsprd';
 	var $t_tsprb			= 'tsprb';
+
+    public function document_completion($projid,$sprno)
+    {
+        $requirements=$this->db->query("SELECT status,namstat,seq FROM mstat WHERE statgrp='DOK' AND seq>0 ORDER BY seq,status")->result();
+        $required=array();foreach ($requirements as $item) $required[$item->status]=$item;
+        $completed=array();
+        foreach ($this->db->query('SELECT DISTINCT status FROM tsprd WHERE projid=? AND sprno=?',array($projid,$sprno))->result() as $item) {
+            if (isset($required[$item->status])) $completed[$item->status]=TRUE;
+        }
+        $this->load->model('mod_booking');
+        foreach ($this->mod_booking->documents_for_spr($projid,$sprno) as $document) {
+            if ($document->exists && $document->document_status!==NULL && isset($required[$document->document_status])) $completed[$document->document_status]=TRUE;
+        }
+        return array('requirements'=>$requirements,'completed'=>$completed,
+            'percent'=>$required?(int)round(count($completed)/count($required)*100):0);
+    }
 	
 	function update_sprb($sprno,$projid,$data)
 	{

@@ -1,0 +1,8 @@
+ALTER TABLE tpengajuan_retensi
+ ADD COLUMN kota_surat VARCHAR(100) NOT NULL DEFAULT 'Cirendeu',
+ ADD COLUMN nama_perusahaan VARCHAR(150) NOT NULL DEFAULT 'PT RAJA CAHAYA PROPERTINDO',
+ ADD COLUMN alamat_proyek TEXT NULL,
+ ADD COLUMN bank_tujuan VARCHAR(150) NOT NULL DEFAULT 'PT. Bank Tabungan Negara (Persero) Tbk.',
+ ADD COLUMN alamat_tujuan TEXT NULL,
+ ADD COLUMN atas_nama VARCHAR(150) NOT NULL DEFAULT '',
+ ADD COLUMN bank_rekening VARCHAR(150) NOT NULL DEFAULT '';

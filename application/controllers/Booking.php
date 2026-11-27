@@ -9,13 +9,34 @@ class Booking extends CI_Controller
     {
         if (!$this->session->userdata('booking_token')) $this->session->set_userdata('booking_token',bin2hex(random_bytes(32)));
         $this->load->view('booking_public',array('fields'=>$this->mod_booking->fields(),'attachments'=>$this->mod_booking->attachments(),
-            'projects'=>$this->db->order_by('namproj')->get_where('mproj',array('status'=>'AKT'))->result(),
+            'projects'=>$this->db->order_by('projid','ASC')->get_where('mproj',array('status'=>'AKT'))->result(),
             'marketing'=>$this->db->order_by('namaslsman')->get('msalesman')->result(),'request_key'=>bin2hex(random_bytes(16))));
     }
-    public function units($projid=NULL) { $this->json(array('data'=>$this->mod_booking->units((int)$projid))); }
+    public function lots($projid=NULL) { $this->json(array('data'=>$this->mod_booking->lots((int)$projid))); }
+    public function siteplan()
+    {
+        $this->load->model('mod_siteplan');
+        $projects=$this->mod_siteplan->projects(TRUE,TRUE);
+        $requested=$this->input->get('projid');$projid=(int)$requested;$project=NULL;
+        if ($requested===NULL) foreach ($projects as $item) if ($item->has_siteplan!==NULL) { $projid=(int)$item->projid;break; }
+        foreach ($projects as $item) if ((int)$item->projid===$projid) $project=$item;
+        if ($projid && !$project) { show_404();return; }
+        $lotid=0;
+        $template=$project ? $this->mod_siteplan->template($projid) : NULL;
+        $units=$template ? $this->mod_siteplan->units($projid,$lotid) : array();
+        $legend=array('tersedia'=>array('Ready','#ffffff'),'belum_rilis'=>array('Belum Ready','#cbd5e1'),'tidak_tersedia'=>array('Tidak Tersedia','#a8b0ba'),'booking'=>array('Booking','#f6cc5c'),'spr'=>array('Proses SPR','#6db4ee'),'akad'=>array('Sudah Akad','#76cb9a'),'batal'=>array('Batal','#ef9a9a'));
+        $counts=array_fill_keys(array_keys($legend),0);
+        foreach ($units as $unit) { $counts[$unit->state]++;$unit->stock_url=NULL;$unit->spr_url=NULL; }
+        $this->load->view('siteplan_public',array('title'=>'Siteplan Penjualan','projects'=>$projects,'project'=>$project,'projid'=>$projid,'template'=>$template,'units'=>$units,'legend'=>$legend,'counts'=>$counts));
+    }
+    public function units($projid=NULL) {
+        $units=$this->mod_booking->units((int)$projid,(int)$this->input->get('lot_release_id'));
+        $data=array();foreach ($units as $unit) $data[]=array('blok'=>$unit->blok,'no'=>$unit->no,'lot'=>$unit->release_kode_lot,'jenis'=>$unit->jenis);
+        $this->json(array('data'=>$data));
+    }
     public function price()
     {
-        $unit=$this->mod_booking->unit((int)$this->input->get('projid'),$this->input->get('blok'),$this->input->get('no'));
+        $unit=$this->mod_booking->unit((int)$this->input->get('projid'),$this->input->get('blok'),$this->input->get('no'),(int)$this->input->get('lot_release_id'));
         if (!$unit) { $this->json(array('message'=>'Unit tidak tersedia.'),404);return; }
         $price=$this->mod_booking->price($unit);
         $this->json(array('harga'=>$price?(float)$price->hrgstd:0,'biaya_titipan'=>$price?(float)$price->byttp:0,'total'=>$price?(float)$price->hrgstd+(float)$price->byttp:0));
@@ -44,7 +65,7 @@ class Booking extends CI_Controller
         foreach (array('tanggal','tgl_lahir') as $field) { $value=$this->input->post($field);$date=DateTime::createFromFormat('!Y-m-d',$value);if (!$date || $date->format('Y-m-d')!==$value || ($field==='tgl_lahir'&&$value>date('Y-m-d'))) { $this->json(array('message'=>'Tanggal tidak valid.'),422);return; } }
         $fee=str_replace('.','',(string)$this->input->post('booking_fee'));
         if (!preg_match('/^[0-9]{1,13}$/D',$fee) || (int)$fee<=0) { $this->json(array('message'=>'Booking fee harus berupa rupiah lebih dari nol.'),422);return; }
-        $unit=$this->mod_booking->unit((int)$this->input->post('projid'),(string)$this->input->post('blok'),(string)$this->input->post('no'));
+        $unit=$this->mod_booking->unit((int)$this->input->post('projid'),(string)$this->input->post('blok'),(string)$this->input->post('no'),(int)$this->input->post('lot_release_id'));
         if (!$unit) { $this->json(array('message'=>'Unit tidak tersedia. Pilih ulang lokasi dan kavling.'),422);return; }
         $price=$this->mod_booking->price($unit);$total=$price?(float)$price->hrgstd+(float)$price->byttp:0;
         if ($total<=0) { $this->json(array('message'=>'Harga unit belum ditentukan. Hubungi marketing.'),422);return; }
@@ -65,11 +86,15 @@ class Booking extends CI_Controller
             $file=$this->upload->data();$paths[]=$file['full_path'];$files[$field]=array('nama'=>$label,'file'=>$file['file_name'],'mime'=>$file['file_type']);
         }
         $this->db->trans_begin();
+        $release=$this->db->query('SELECT id FROM mlot WHERE id=? AND siteplan_active=1 AND release_saved_at IS NOT NULL FOR UPDATE',array($unit->release_lot_id))->row();
         $locked=$this->db->query('SELECT status FROM mkav WHERE projid=? AND blok=? AND no=? FOR UPDATE',array($unit->projid,$unit->blok,$unit->no))->row();
+        $ready=$release ? $this->mod_booking->unit($unit->projid,$unit->blok,$unit->no,$unit->release_lot_id) : NULL;
         $taken=$this->db->get_where('tbooking',array('projid'=>$unit->projid,'blok'=>$unit->blok,'no'=>$unit->no))->row();
-        if (!$locked||$locked->status!=='BLA'||$taken) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Unit baru saja dipilih pemohon lain. Silakan pilih unit lain.'),409);return; }
+        if (!$ready||!$locked||$locked->status!=='BLA'||$taken) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Unit tidak lagi ready pada Lot Release ini. Silakan pilih unit lain.'),409);return; }
+        $latestPrice=$this->mod_booking->price($ready);
+        if ((float)$latestPrice->hrgstd+(float)$latestPrice->byttp!==$total) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Harga Lot Release berubah. Pilih ulang unit untuk memperbarui harga.'),409);return; }
         $registration='BG-'.date('Ymd').'-'.strtoupper(bin2hex(random_bytes(5)));
-        $ok=$this->db->insert('tbooking',array('no_registrasi'=>$registration,'request_key'=>$key,'tanggal'=>$payload['tanggal'],'nama_lengkap'=>$payload['nama_lengkap'],'nik'=>$payload['nik'],'no_telp'=>$payload['no_telp'],'projid'=>$unit->projid,'blok'=>$unit->blok,'no'=>$unit->no,'nama_proyek'=>$unit->namproj,'marketing'=>$sales?$sales->namaslsman:'Non Marketing','jenis_perumahan'=>$this->input->post('jenis_perumahan'),'jenis_pembelian'=>$this->input->post('jenis_pembelian'),'total_harga'=>$total,'booking_fee'=>$fee,'status'=>'Pending','data_pemohon'=>json_encode($payload),'berkas'=>json_encode($files),'created_at'=>date('Y-m-d H:i:s')));
+        $ok=$this->db->insert('tbooking',array('no_registrasi'=>$registration,'request_key'=>$key,'lot_release_id'=>$unit->release_lot_id,'tanggal'=>$payload['tanggal'],'nama_lengkap'=>$payload['nama_lengkap'],'nik'=>$payload['nik'],'no_telp'=>$payload['no_telp'],'projid'=>$unit->projid,'blok'=>$unit->blok,'no'=>$unit->no,'nama_proyek'=>$unit->namproj,'marketing'=>$sales?$sales->namaslsman:'Non Marketing','jenis_perumahan'=>$this->input->post('jenis_perumahan'),'jenis_pembelian'=>$this->input->post('jenis_pembelian'),'total_harga'=>$total,'booking_fee'=>$fee,'status'=>'Pending','data_pemohon'=>json_encode($payload),'berkas'=>json_encode($files),'created_at'=>date('Y-m-d H:i:s')));
         if (!$ok||!$this->db->trans_status()) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Booking gagal disimpan. Silakan coba kembali.'),500);return; }
         $this->db->trans_commit();$this->json(array('message'=>'Booking berhasil dikirim. Pengajuan konsumen siap ditindaklanjuti.','no_registrasi'=>$registration));
     }

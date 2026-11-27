@@ -1,4 +1,4 @@
-<div class="modal fade" id="pencairan-modal" tabindex="-1" role="dialog" aria-labelledby="pencairan-title" data-backdrop="static" data-keyboard="false" data-url="<?php echo site_url('pencairan'); ?>">
+<div class="modal fade" id="pencairan-modal" tabindex="-1" role="dialog" aria-labelledby="pencairan-title" data-backdrop="static" data-keyboard="false" data-url="<?php echo site_url('pencairan'); ?>" data-pengajuan-id="<?php echo isset($pengajuan_id) ? (int)$pengajuan_id : 0; ?>">
  <div class="modal-dialog modal-lg" role="document"><div class="modal-content">
   <div class="modal-header"><button class="close" type="button" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="pencairan-title">Pencairan Akad</h4></div>
   <div class="modal-body">
@@ -10,9 +10,9 @@
     <input type="hidden" name="projid"><input type="hidden" name="sprno"><input type="hidden" name="token"><input type="hidden" name="request_key"><input type="hidden" name="base_id">
     <p id="pencairan-stage-note" class="alert alert-info" role="status"></p><fieldset id="pencairan-fields">
      <div class="row"><div class="col-xs-12 form-group"><label for="pencairan-plafon">Nilai Plafon (Rp)</label><input id="pencairan-plafon" name="plafon" type="text" inputmode="numeric" autocomplete="off" maxlength="17" class="form-control pencairan-amount" required></div>
-     <div class="col-xs-12 form-group"><label for="pencairan-kpp">KKP Proyek (Rp)</label><input id="pencairan-kpp" name="kpp" readonly type="text" inputmode="numeric" autocomplete="off" maxlength="17" class="form-control pencairan-amount" value="0" required></div></div>
+     <div class="col-xs-12 form-group"><label for="pencairan-kpp">KMK Proyek (Rp)</label><input id="pencairan-kpp" name="kpp" readonly type="text" inputmode="numeric" autocomplete="off" maxlength="17" class="form-control pencairan-amount" value="0" required></div></div>
      <h4 id="pencairan-retensi-title">Retensi yang Ditahan</h4><div id="pencairan-categories" class="row"></div>
-     <div class="well" aria-live="polite"><div>Total retensi: <strong id="pencairan-retensi-total">Rp 0</strong></div><h4>Jumlah Pencairan: <strong id="pencairan-net">Rp 0</strong></h4><small>Awal: plafon dikurangi KKP dan retensi. Lanjutan: jumlah nominal pencairan retensi yang diisi.</small></div>
+     <div class="well" aria-live="polite"><div>Total retensi: <strong id="pencairan-retensi-total">Rp 0</strong></div><h4>Jumlah Pencairan: <strong id="pencairan-net">Rp 0</strong></h4><small>Awal: plafon dikurangi KMK dan retensi. Lanjutan: jumlah nominal pencairan retensi yang diisi.</small></div>
      <button type="submit" id="pencairan-save" class="btn btn-success"><i class="fa fa-save" aria-hidden="true"></i> Simpan Pencairan</button>
     </fieldset>
    </form>
@@ -31,4 +31,10 @@
 #pencairan-fields .retensi-entry .form-control{width:100%}
 #pencairan-fields .retensi-balance label{display:block;margin:0 0 4px}
 @media(max-width:480px){#pencairan-fields .form-group{gap:12px}#pencairan-fields .form-group>label,#pencairan-fields .retensi-balance{flex-basis:44%;font-size:13px}#pencairan-fields .retensi-balance span{font-size:12px}}
+</style>
+
+<style>
+#pencairan-history .retensi-history-line{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:4px}
+#pencairan-history .retensi-history-amount{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+#pencairan-history td:nth-child(2),#pencairan-history td:nth-child(4){font-variant-numeric:tabular-nums}
 </style>

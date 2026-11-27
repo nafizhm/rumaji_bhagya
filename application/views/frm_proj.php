@@ -64,7 +64,7 @@
                       </div>
                       
                       <div class="form-group">
-                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="txt_kkp">Nilai KKP (Rp)</label>
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="txt_kkp">Nilai KMK (Rp)</label>
                         <div class="col-md-6 col-sm-6 col-xs-12">
                           <input name="txt_kkp" id="txt_kkp" class="form-control" type="text" inputmode="numeric" maxlength="17" value="<?php echo html_escape(set_value('txt_kkp',isset($default['txt_kkp'])?number_format($default['txt_kkp'],0,',','.'):'0')); ?>">
                         </div>

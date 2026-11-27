@@ -24,15 +24,24 @@ class Mod_akad extends CI_Model
             LEFT JOIN (SELECT projid,sprno,MAX(id) id FROM tpencairan WHERE projid=? GROUP BY projid,sprno) latest
                 ON latest.projid=h.projid AND latest.sprno=h.sprno
             LEFT JOIN tpencairan p ON p.id=latest.id
-            WHERE k.projid=? AND k.status IN ('AKD','AKS') ORDER BY k.blok,k.no,h.sprno",array($projid,$projid,$projid))->result();
-        $categories=array();$balances=array();
-        foreach ($this->db->order_by('nama_retensi')->get('mretensi_kategori')->result() as $category) $categories[$category->id]=$category->nama_retensi;
+            WHERE k.projid=? AND (k.status IN ('AKD','AKS') OR p.id IS NOT NULL) ORDER BY k.blok,k.no,h.sprno",array($projid,$projid,$projid))->result();
+        $categories=array();$balances=array();$categoryNames=array();
+        foreach ($this->db->order_by('nama_retensi')->get('mretensi_kategori')->result() as $category) {
+            $categories[$category->id]=$category->nama_retensi;
+            $categoryNames[mb_strtoupper(trim($category->nama_retensi),'UTF-8')]=$category->id;
+        }
         $ids=array();foreach ($rows as $row) if ($row->pencairan_id!==NULL) $ids[]=$row->pencairan_id;
         if ($ids) {
             $lines=$this->db->where_in('pencairan_id',$ids)->get('tpencairan_retensi')->result();
             foreach ($lines as $line) {
-                if (!isset($categories[$line->kategori_id])) $categories[$line->kategori_id]=$line->nama_retensi;
-                $balances[$line->pencairan_id][$line->kategori_id]=(float)$line->nilai;
+                $categoryId=$line->kategori_id;
+                if (!isset($categories[$categoryId])) {
+                    $name=mb_strtoupper(trim($line->nama_retensi),'UTF-8');
+                    if (isset($categoryNames[$name])) $categoryId=$categoryNames[$name];
+                    else { $categories[$categoryId]=$line->nama_retensi;$categoryNames[$name]=$categoryId; }
+                }
+                if (!isset($balances[$line->pencairan_id][$categoryId])) $balances[$line->pencairan_id][$categoryId]=0;
+                $balances[$line->pencairan_id][$categoryId]+=(float)$line->nilai;
             }
         }
         foreach ($rows as $row) {

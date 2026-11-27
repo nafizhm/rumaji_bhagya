@@ -293,16 +293,12 @@
     <label class="control-label col-md-3 col-sm-3 col-xs-12">Jenis</label>
     <div class="col-md-6 col-sm-6 col-xs-12">
         
-        <div class="radio">
-            <label>
-                <input type="radio" name="rd_jenis" value="Subsidi" <?php echo set_radio('rd_jenis', 'Subsidi', isset($row_stok->jenis) ? ($row_stok->jenis == 'Subsidi') : TRUE); ?> /> Subsidi
-            </label>
-        </div>
-        <div class="radio">
-            <label>
-                <input type="radio" name="rd_jenis" value="Komersial" <?php echo set_radio('rd_jenis', 'Komersial', isset($row_stok->jenis) ? ($row_stok->jenis == 'Komersial') : FALSE); ?> /> Komersial
-            </label>
-        </div>
+        <?php $jenis_pilihan=isset($row_stok->jenis) ? $row_stok->jenis : 'Subsidi KPR'; if ($jenis_pilihan==='Subsidi') $jenis_pilihan='Subsidi KPR'; ?>
+        <?php foreach (array('Subsidi KPR','Subsidi Cash','Komersial') as $pilihan): ?>
+        <div class="radio"><label>
+            <input type="radio" name="rd_jenis" value="<?php echo $pilihan; ?>" <?php echo set_radio('rd_jenis',$pilihan,$jenis_pilihan===$pilihan); ?> /> <?php echo $pilihan; ?>
+        </label></div>
+        <?php endforeach; ?>
     </div>
 </div>
 <!-- BAMS 11-03-2025 END -->
@@ -1196,7 +1192,7 @@ jQuery(function($){
  $('<input>').attr({type:'hidden',name:'booking_id',value:<?php echo (int)$booking_source->id; ?>}).appendTo('#form1');
  var marketing=<?php echo json_encode($booking_source->marketing,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
  $('#cb_slsman option').each(function(){var label=$(this).text().trim();if(label===marketing || label.slice(-(marketing.length+3))===' - '+marketing){$('#cb_slsman').val(this.value).trigger('change');}});
- $('input[name="rd_jenis"]').val([<?php echo json_encode($booking_source->jenis_perumahan==='Komersil'?'Komersial':'Subsidi'); ?>]).trigger('change');
+ $('input[name="rd_jenis"]').val([<?php echo json_encode($booking_source->jenis_perumahan==='Komersil'?'Komersial':($booking_source->jenis_pembelian==='KPR'?'Subsidi KPR':'Subsidi Cash')); ?>]).trigger('change');
 });
 </script>
 <?php endif; ?>

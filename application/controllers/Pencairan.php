@@ -19,6 +19,17 @@ class Pencairan extends CI_Controller
 
     private function spr($projid,$sprno)
     {
+        $context=$this->input->method()==='post' ? $this->input->post('pengajuan_id') : $this->input->get('pengajuan_id');
+        if ($context!==NULL) {
+            if (!is_string($context) || !ctype_digit($context) || (int)$context<1) return NULL;
+            $this->load->model('mod_pengajuan_akad');
+            if (!$this->mod_pengajuan_akad->permission($this->input->method()==='post' ? 'u' : 'r')) return NULL;
+            return $this->db->query("SELECT h.sprno,h.kpr,h.nama,h.blok,h.no FROM tsprh h
+                JOIN tpengajuan_akad_peserta m ON m.projid=h.projid AND m.sprno=h.sprno
+                JOIN tpengajuan_akad a ON a.id=m.pengajuan_id
+                WHERE m.pengajuan_id=? AND h.projid=? AND h.sprno=? AND h.status<>'BTL'
+                AND (a.projid IS NULL OR a.projid=0 OR a.projid=h.projid)",array((int)$context,$projid,$sprno))->row();
+        }
         return $this->db->query("SELECT h.sprno,h.kpr,h.nama,h.blok,h.no FROM tsprh h INNER JOIN mkav k ON k.projid=h.projid AND k.blok=h.blok AND k.no=h.no WHERE h.projid=? AND h.sprno=? AND h.status <> 'BTL' AND k.status IN ('AKD','AKS')",array($projid,$sprno))->row();
     }
 
@@ -100,7 +111,7 @@ class Pencairan extends CI_Controller
         if ($latest) {
             $previous_total=0;foreach ($categories as $category) $previous_total+=$category->sisa;
             $net=$previous_total-$total;
-            if ($net>$available) $error='Pencairan melebihi sisa plafon setelah KKP proyek. Periksa saldo retensi.';
+            if ($net>$available) $error='Pencairan melebihi sisa plafon setelah KMK proyek. Periksa saldo retensi.';
         }
         if ($net<=0) $error='Jumlah pencairan harus lebih dari nol. Kurangi sisa retensi yang masih ditahan untuk mencairkannya.';
         if ($error) { $this->db->trans_rollback();$this->respond(array('message'=>$error),422);return; }
