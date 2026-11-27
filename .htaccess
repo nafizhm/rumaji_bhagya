@@ -1,5 +1,6 @@
 RewriteEngine On
-RewriteBase /rumaji/
+# Use the current directory so the app works at /rumaji/ locally and / on hosting.
+RewriteRule ^index\.php(?:/|$) - [L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
