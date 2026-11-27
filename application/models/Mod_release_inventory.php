@@ -6,9 +6,9 @@ class Mod_release_inventory extends CI_Model
     // All inventory queries use the same k (stock), p (project), and l (release) aliases.
     public static function ready_sql()
     {
-        return "k.status='BLA' AND p.status='AKT' AND l.siteplan_active=1
+        return "k.status IN ('BLA','BTL') AND p.status='AKT' AND l.siteplan_active=1
             AND l.release_saved_at IS NOT NULL AND l.projid=k.projid
-            AND NOT EXISTS (SELECT 1 FROM tbooking booked WHERE booked.projid=k.projid AND booked.blok=k.blok AND booked.no=k.no)
+            AND NOT EXISTS (SELECT 1 FROM tbooking booked WHERE booked.projid=k.projid AND booked.blok=k.blok AND booked.no=k.no AND booked.status IN ('Baru','Pending','Disetujui'))
             AND NOT EXISTS (SELECT 1 FROM tsprh sold WHERE sold.projid=k.projid AND sold.blok=k.blok AND sold.no=k.no AND sold.status<>'BTL')";
     }
 

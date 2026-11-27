@@ -262,6 +262,7 @@
                   <?php $this->load->view('menu_retensi'); ?>
                   <li><a href="<?php echo site_url('notaris'); ?>"><i class="fa fa-briefcase"></i> Notaris</a></li>
                   <li><a href="<?php echo site_url('lot'); ?>"><i class="fa fa-th-large"></i> Pengaturan Lot</a></li>
+                  <?php $siteplanMenuCI =& get_instance();$siteplanMenuCI->load->model('mod_siteplan_status');if ($siteplanMenuCI->mod_siteplan_status->permission('r')): ?><li><a href="<?php echo site_url('pengaturan_siteplan'); ?>"><i class="fa fa-paint-brush"></i> Pengaturan Siteplan</a></li><?php endif; ?>
                   <li><a><i class="fa fa-sitemap"></i> Project <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo site_url('proj/input_proj'); ?>">Tambah Project</a></li>

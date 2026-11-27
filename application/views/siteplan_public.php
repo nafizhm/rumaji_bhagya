@@ -1,5 +1,5 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); $assets=$this->config->item('assets'); ?>
-<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#174d87"><title>Siteplan Penjualan</title><link rel="stylesheet" href="<?php echo $assets; ?>/css/siteplan-public.css?v=3"></head>
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#174d87"><title>Siteplan Penjualan</title><link rel="stylesheet" href="<?php echo $assets; ?>/css/siteplan-public.css?v=4"></head>
 <body class="public-siteplan">
 <main class="sp-shell">
  <div class="sp-topline"><a href="<?php echo site_url('booking'); ?>"><span aria-hidden="true">&larr;</span> Kembali ke Booking</a><span>RUMAJI</span></div>
@@ -18,9 +18,11 @@
      <?php echo $template->header_svg; ?>
      <?php $unitData=array(); foreach ($units as $unit):
       $ready=$unit->state==='tersedia';
-      $unitData[$unit->kode_unit]=array('kode'=>$unit->kode_unit,'blok'=>$unit->blok,'no'=>$unit->no,'luas'=>$unit->ltstd,'tipe'=>$unit->release_type ?: $unit->tipe,'jenis'=>$unit->jenis,'state'=>$unit->state,'status'=>$legend[$unit->state][0], 'harga'=>$ready ? (float)$unit->release_harga_jual+(float)$unit->release_biaya_lain : NULL);
+      $hex=substr($legend[$unit->state][1],1);$brightness=hexdec(substr($hex,0,2))*.299+hexdec(substr($hex,2,2))*.587+hexdec(substr($hex,4,2))*.114;
+      $labelColor=$brightness>150 ? '#1f2937' : '#ffffff';
+      $unitData[$unit->kode_unit]=array('kode'=>$unit->kode_unit,'blok'=>$unit->blok,'no'=>$unit->no,'luas'=>$unit->ltstd,'tipe'=>$unit->release_type ?: $unit->tipe,'jenis'=>$unit->jenis,'state'=>$unit->state,'status'=>$legend[$unit->state][0],'color'=>$legend[$unit->state][1], 'harga'=>$ready ? (float)$unit->release_harga_jual+(float)$unit->release_biaya_lain : NULL);
      ?>
-     <g class="sp-unit<?php echo $ready ? '' : ' is-disabled'; ?>" role="<?php echo $ready ? 'button' : 'img'; ?>" tabindex="<?php echo $ready ? '0' : '-1'; ?>" aria-disabled="<?php echo $ready ? 'false' : 'true'; ?>" data-code="<?php echo html_escape($unit->kode_unit); ?>" data-state="<?php echo $unit->state; ?>" aria-label="<?php echo html_escape('Kavling '.$unit->blok.'/'.$unit->no.', '.$legend[$unit->state][0]); ?>"><title><?php echo html_escape($unit->kode_unit.' - '.$legend[$unit->state][0]); ?></title><?php echo str_replace('[[warna]]',$ready ? $legend[$unit->state][1] : '#20252b',$unit->shape_svg); ?><?php echo $unit->label_svg; ?></g>
+     <g class="sp-unit<?php echo $ready ? '' : ' is-disabled'; ?>" role="<?php echo $ready ? 'button' : 'img'; ?>" tabindex="<?php echo $ready ? '0' : '-1'; ?>" aria-disabled="<?php echo $ready ? 'false' : 'true'; ?>" data-code="<?php echo html_escape($unit->kode_unit); ?>" data-state="<?php echo $unit->state; ?>" style="--sp-status-color:<?php echo html_escape($legend[$unit->state][1]); ?>;--sp-label-color:<?php echo $labelColor; ?>" aria-label="<?php echo html_escape('Kavling '.$unit->blok.'/'.$unit->no.', '.$legend[$unit->state][0]); ?>"><title><?php echo html_escape($unit->kode_unit.' - '.$legend[$unit->state][0]); ?></title><?php echo str_replace('[[warna]]',$legend[$unit->state][1],$unit->shape_svg); ?><?php echo $unit->label_svg; ?></g>
      <?php endforeach; echo $template->footer_svg; ?>
     </div>
     <button type="button" class="sp-reset" id="sp-reset" aria-label="Kembalikan tampilan awal peta"><span aria-hidden="true">&#8635;</span> Reset Siteplan</button>
@@ -28,8 +30,8 @@
     <div class="sp-map-hint" id="sp-result" role="status">Ketuk kavling untuk melihat detail</div>
    </div>
    <div class="sp-summary"><div class="sp-legend" aria-label="Keterangan warna">
-    <span><i style="background:#fff"></i>Ready</span><span><i style="background:#20252b"></i>Belum Ready</span>
-   </div><span class="sp-ready-count"><?php echo (int)$counts['tersedia']; ?> unit ready</span></div>
+    <?php foreach ($legend as $item): ?><span><i style="background:<?php echo html_escape($item[1]); ?>"></i><?php echo html_escape($item[0]); ?></span><?php endforeach; ?>
+   </div><span class="sp-ready-count"><?php echo (int)$counts['tersedia']; ?> unit <?php echo html_escape($legend['tersedia'][0]); ?></span></div>
    <?php if (!$counts['tersedia']): ?><p class="sp-notice">Belum ada unit yang tersedia untuk dijual di proyek ini.</p><?php endif; ?>
    <script type="application/json" id="sp-unit-data"><?php echo json_encode($unitData,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?></script>
    <?php endif; ?>
@@ -46,5 +48,5 @@
  <div><dt>Luas Tanah</dt><dd id="sp-detail-area"></dd></div></dl>
  <div class="sp-price"><span id="sp-price-label">Total Harga</span><strong id="sp-detail-price"></strong></div>
 </section>
-<script src="<?php echo $assets; ?>/js/siteplan-public.js?v=4"></script>
+<script src="<?php echo $assets; ?>/js/siteplan-public.js?v=5"></script>
 </body></html>

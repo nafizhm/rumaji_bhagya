@@ -23,12 +23,12 @@ body.public-siteplan{margin:0;background:radial-gradient(ellipse at top,#dce9f7 
 .sp-map>svg{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 .sp-map>svg.is-dragging{cursor:grabbing}
 .sp-unit{cursor:pointer}
-.sp-unit text{pointer-events:none}
+.sp-unit text{pointer-events:none;fill:var(--sp-label-color,#1f2937)!important}
 .sp-unit:hover>path,.sp-unit:hover>polygon,.sp-unit:focus>path,.sp-unit:focus>polygon,.sp-unit.is-selected>path,.sp-unit.is-selected>polygon{stroke:#00a9db!important;stroke-width:95!important;paint-order:stroke fill}
 .sp-unit.is-filtered{opacity:.12;pointer-events:none}
 .sp-unit.is-disabled{pointer-events:none;cursor:default;opacity:.8}
-.sp-unit.is-disabled>path,.sp-unit.is-disabled>polygon{fill:#20252b!important;stroke:#47505c!important}
-.sp-unit.is-disabled text{fill:#aab3bd!important}
+.sp-unit.is-disabled>path,.sp-unit.is-disabled>polygon{fill:var(--sp-status-color,#20252b)!important;stroke:#47505c!important}
+.sp-unit.is-disabled text{fill:var(--sp-label-color,#aab3bd)!important}
 .sp-reset,.sp-zoom button{border:1px solid #d4dee8;background:#fff;color:#3b4c62;box-shadow:0 2px 8px #152b4d0d;cursor:pointer;font:600 12px "Segoe UI",Arial,sans-serif;min-height:44px}
 .sp-reset{position:absolute;top:12px;left:12px;padding:8px 13px;border-radius:8px;display:flex;align-items:center;gap:7px}
 .sp-reset span{font-size:22px;line-height:1}

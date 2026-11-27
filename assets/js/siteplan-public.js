@@ -29,7 +29,8 @@
         var unit=data[node.dataset.code];
         if (!unit || unit.state!=='tersedia' || node.classList.contains('is-disabled') || node.classList.contains('is-filtered')) return;
         closePopup(false);selected=node;node.classList.add('is-selected');node.setAttribute('aria-expanded','true');
-        text('sp-detail-status',unit.status);document.getElementById('sp-detail-status').dataset.state=unit.state;
+        text('sp-detail-status',unit.status);var statusBadge=document.getElementById('sp-detail-status');statusBadge.dataset.state=unit.state;
+        if(unit.color){statusBadge.style.backgroundColor=unit.color;var rgb=unit.color.slice(1);var brightness=parseInt(rgb.slice(0,2),16)*.299+parseInt(rgb.slice(2,4),16)*.587+parseInt(rgb.slice(4,6),16)*.114;statusBadge.style.color=brightness>150?'#1f2937':'#ffffff';}
         text('sp-detail-blok',unit.blok);text('sp-detail-code',unit.no);
         text('sp-detail-type',unit.tipe);text('sp-detail-area',unit.luas ? Number(unit.luas).toLocaleString('id-ID')+' m\u00b2' : '-');
         var ready=unit.state==='tersedia';

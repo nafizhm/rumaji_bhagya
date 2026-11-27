@@ -31,18 +31,17 @@ class Mod_siteplan extends CI_Model
             LEFT JOIN mlot_unit lu ON lu.projid=k.projid AND lu.blok=k.blok AND lu.no=k.no
             LEFT JOIN mlot l ON l.id=lu.lot_id
             LEFT JOIN mstat s ON s.statgrp='KAV' AND s.status=k.status
-            LEFT JOIN tbooking b ON b.projid=k.projid AND b.blok=k.blok AND b.no=k.no
+            LEFT JOIN tbooking b ON b.projid=k.projid AND b.blok=k.blok AND b.no=k.no AND b.status IN ('Baru','Pending','Disetujui')
             LEFT JOIN (SELECT projid,blok,no,MAX(sprno) sprno FROM tsprh WHERE projid=? AND status <> 'BTL'
                 GROUP BY projid,blok,no) h ON h.projid=k.projid AND h.blok=k.blok AND h.no=k.no
             WHERE u.projid=? ORDER BY u.blok,u.no",array($lotid,$lotid,$projid,$projid))->result();
         foreach ($rows as $row) {
             if (in_array($row->status,array('AKD','AKS'),TRUE)) $row->state='akad';
-            elseif ($row->status==='BLA' && in_array($row->booking_status,array('Baru','Pending','Disetujui'),TRUE)) $row->state='booking';
-            elseif ($row->status==='BLA' && $row->sprno!==NULL) $row->state='spr';
-            elseif ($row->status==='BLA' && $row->ready_for_sale) $row->state='tersedia';
-            elseif ($row->status==='BLA' && $row->booking_id!==NULL) $row->state='tidak_tersedia';
-            elseif ($row->status==='BLA') $row->state='belum_rilis';
-            elseif ($row->status==='BTL') $row->state='batal';
+            elseif (in_array($row->status,array('BLA','BTL'),TRUE) && in_array($row->booking_status,array('Baru','Pending','Disetujui'),TRUE)) $row->state='booking';
+            elseif (in_array($row->status,array('BLA','BTL'),TRUE) && $row->sprno!==NULL) $row->state='spr';
+            elseif (in_array($row->status,array('BLA','BTL'),TRUE) && $row->ready_for_sale) $row->state='tersedia';
+            elseif (in_array($row->status,array('BLA','BTL'),TRUE) && $row->booking_id!==NULL) $row->state='tidak_tersedia';
+            elseif (in_array($row->status,array('BLA','BTL'),TRUE)) $row->state='belum_rilis';
             else $row->state='spr';
         }
         return $rows;

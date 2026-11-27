@@ -24,7 +24,8 @@ class Booking extends CI_Controller
         $lotid=0;
         $template=$project ? $this->mod_siteplan->template($projid) : NULL;
         $units=$template ? $this->mod_siteplan->units($projid,$lotid) : array();
-        $legend=array('tersedia'=>array('Ready','#ffffff'),'belum_rilis'=>array('Belum Ready','#cbd5e1'),'tidak_tersedia'=>array('Tidak Tersedia','#a8b0ba'),'booking'=>array('Booking','#f6cc5c'),'spr'=>array('Proses SPR','#6db4ee'),'akad'=>array('Sudah Akad','#76cb9a'),'batal'=>array('Batal','#ef9a9a'));
+        $this->load->model('mod_siteplan_status');
+        $legend=$this->mod_siteplan_status->legend();
         $counts=array_fill_keys(array_keys($legend),0);
         foreach ($units as $unit) { $counts[$unit->state]++;$unit->stock_url=NULL;$unit->spr_url=NULL; }
         $this->load->view('siteplan_public',array('title'=>'Siteplan Penjualan','projects'=>$projects,'project'=>$project,'projid'=>$projid,'template'=>$template,'units'=>$units,'legend'=>$legend,'counts'=>$counts));
@@ -89,8 +90,8 @@ class Booking extends CI_Controller
         $release=$this->db->query('SELECT id FROM mlot WHERE id=? AND siteplan_active=1 AND release_saved_at IS NOT NULL FOR UPDATE',array($unit->release_lot_id))->row();
         $locked=$this->db->query('SELECT status FROM mkav WHERE projid=? AND blok=? AND no=? FOR UPDATE',array($unit->projid,$unit->blok,$unit->no))->row();
         $ready=$release ? $this->mod_booking->unit($unit->projid,$unit->blok,$unit->no,$unit->release_lot_id) : NULL;
-        $taken=$this->db->get_where('tbooking',array('projid'=>$unit->projid,'blok'=>$unit->blok,'no'=>$unit->no))->row();
-        if (!$ready||!$locked||$locked->status!=='BLA'||$taken) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Unit tidak lagi ready pada Lot Release ini. Silakan pilih unit lain.'),409);return; }
+        $taken=$this->db->where_in('status',array('Baru','Pending','Disetujui'))->get_where('tbooking',array('projid'=>$unit->projid,'blok'=>$unit->blok,'no'=>$unit->no))->row();
+        if (!$ready||!$locked||!in_array($locked->status,array('BLA','BTL'),TRUE)||$taken) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Unit tidak lagi ready pada Lot Release ini. Silakan pilih unit lain.'),409);return; }
         $latestPrice=$this->mod_booking->price($ready);
         if ((float)$latestPrice->hrgstd+(float)$latestPrice->byttp!==$total) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Harga Lot Release berubah. Pilih ulang unit untuk memperbarui harga.'),409);return; }
         $registration='BG-'.date('Ymd').'-'.strtoupper(bin2hex(random_bytes(5)));
@@ -130,7 +131,18 @@ class Booking extends CI_Controller
         $booking=$this->db->get_where('tbooking',array('id'=>(int)$id))->row();
         if (!$booking) { show_404();return; }
         if ($booking->status==='SPR') { show_error('Booking sudah dibuat SPR dan tidak dapat diverifikasi ulang.',409);return; }
-        if (!$this->db->where('id',(int)$id)->where('status !=','SPR')->update('tbooking',array('status'=>$status))) { show_error('Status gagal disimpan.',500);return; }
+        $this->db->trans_begin();
+        $stock=$this->db->query('SELECT status FROM mkav WHERE projid=? AND blok=? AND no=? FOR UPDATE',array($booking->projid,$booking->blok,$booking->no))->row();
+        $current=$this->db->query('SELECT status FROM tbooking WHERE id=? FOR UPDATE',array($booking->id))->row();
+        if (!$current || $current->status==='SPR') { $this->db->trans_rollback();show_error('Booking sudah dibuat SPR atau tidak ditemukan.',409);return; }
+        if ($status!=='Ditolak') {
+            $other=$this->db->where('id <>',$booking->id)->where_in('status',array('Baru','Pending','Disetujui'))->get_where('tbooking',array('projid'=>$booking->projid,'blok'=>$booking->blok,'no'=>$booking->no))->row();
+            $sold=$this->db->get_where('tsprh',array('projid'=>$booking->projid,'blok'=>$booking->blok,'no'=>$booking->no,'status <>'=>'BTL'))->row();
+            if (!$stock || !in_array($stock->status,array('BLA','BTL'),TRUE) || $other || $sold) { $this->db->trans_rollback();show_error('Unit sudah dipakai booking atau SPR lain.',409);return; }
+        }
+        $this->db->where('id',(int)$id)->update('tbooking',array('status'=>$status));
+        if (!$this->db->trans_status()) { $this->db->trans_rollback();show_error('Status gagal disimpan.',500);return; }
+        $this->db->trans_commit();
         $this->session->set_flashdata('booking_verified',TRUE);
         redirect('booking/admin');
     }

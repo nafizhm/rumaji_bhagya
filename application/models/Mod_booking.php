@@ -21,7 +21,7 @@ class Mod_booking extends CI_Model
     {
         $booking=$this->db->query("SELECT b.id,b.berkas,b.created_at,b.marketing FROM tbooking b
             INNER JOIN tsprh h ON h.projid=b.projid AND h.blok=b.blok AND h.no=b.no AND TRIM(h.ktp)=TRIM(b.nik)
-            WHERE h.projid=? AND h.sprno=? AND h.status <> 'BTL' AND b.status='SPR'",array($projid,$sprno))->row();
+            WHERE h.projid=? AND h.sprno=? AND h.status <> 'BTL' AND b.status='SPR' ORDER BY b.id DESC LIMIT 1",array($projid,$sprno))->row();
         $documents=array();
         if (!$booking) return $documents;
         $document_types=array('foto_ktp'=>'D01','foto_npwp'=>'D02','foto_kk'=>'D05');

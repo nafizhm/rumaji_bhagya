@@ -24,8 +24,8 @@ class Siteplan extends CI_Controller
         $lotid=(int)$this->input->get('lot_release_id');
         $selectedLot=NULL;foreach ($lots as $lot) if ((int)$lot->id===$lotid) $selectedLot=$lot;
         $units=$template?$this->mod_siteplan->units($projid,$lotid):array();
-        $legend=array('tersedia'=>array('Ready','#ffffff'),'belum_rilis'=>array('Belum Ready','#cbd5e1'),'tidak_tersedia'=>array('Tidak Tersedia','#a8b0ba'),'booking'=>array('Booking','#f6cc5c'),
-            'spr'=>array('Proses SPR','#6db4ee'),'akad'=>array('Sudah Akad','#76cb9a'),'batal'=>array('Batal','#ef9a9a'));
+        $this->load->model('mod_siteplan_status');
+        $legend=$this->mod_siteplan_status->legend();
         $counts=array_fill_keys(array_keys($legend),0);
         foreach ($units as $unit) {
             $counts[$unit->state]++;
