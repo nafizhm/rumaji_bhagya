@@ -31,7 +31,7 @@ class Mod_siteplan extends CI_Model
             LEFT JOIN mlot_unit lu ON lu.projid=k.projid AND lu.blok=k.blok AND lu.no=k.no
             LEFT JOIN mlot l ON l.id=lu.lot_id
             LEFT JOIN mstat s ON s.statgrp='KAV' AND s.status=k.status
-            LEFT JOIN tbooking b ON b.projid=k.projid AND b.blok=k.blok AND b.no=k.no AND b.status IN ('Baru','Pending','Disetujui')
+            LEFT JOIN tbooking b ON b.projid=k.projid AND b.blok=k.blok AND b.no=k.no AND b.deleted_at IS NULL AND b.status IN ('Baru','Pending','Disetujui')
             LEFT JOIN (SELECT projid,blok,no,MAX(sprno) sprno FROM tsprh WHERE projid=? AND status <> 'BTL'
                 GROUP BY projid,blok,no) h ON h.projid=k.projid AND h.blok=k.blok AND h.no=k.no
             WHERE u.projid=? ORDER BY u.blok,u.no",array($lotid,$lotid,$projid,$projid))->result();

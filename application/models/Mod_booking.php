@@ -2,6 +2,33 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 class Mod_booking extends CI_Model
 {
+    public function allowed($action)
+    {
+        $column=strtolower($action);
+        if (!in_array($column,array('c','r','u','d'),TRUE)) return FALSE;
+        $permission=$this->db->get_where('mbooking_akses_user',array('userid'=>$this->session->userdata('userid')))->row();
+        if ($permission) return (bool)$permission->$column;
+        if ($this->session->userdata('roleid')==='ADM') return TRUE;
+        $permission=$this->db->get_where('mauth',array('roleid'=>$this->session->userdata('roleid'),'moid'=>'PJ','mid'=>'T001'))->row();
+        return $permission && (bool)$permission->$column;
+    }
+
+    public function remove($id,$permanent,$userid)
+    {
+        $this->db->trans_begin();
+        $row=$this->db->query('SELECT * FROM tbooking WHERE id=? FOR UPDATE',array($id))->row();
+        if (!$row || ($permanent ? !$row->deleted_at : $row->deleted_at)) {
+            $this->db->trans_rollback();return FALSE;
+        }
+        if ($permanent) $this->db->where('id',$id)->delete('tbooking');
+        else $this->db->where('id',$id)->update('tbooking',array('deleted_at'=>date('Y-m-d H:i:s'),'deleted_by'=>$userid));
+        if (!$this->db->trans_status()) { $this->db->trans_rollback();return FALSE; }
+        $this->db->trans_commit();
+        // Uploaded files can also be used by the original database and SPR documents.
+        // Keep those shared assets; permanently deleting removes the booking record.
+        return TRUE;
+    }
+
     public function fields()
     {
         return array(

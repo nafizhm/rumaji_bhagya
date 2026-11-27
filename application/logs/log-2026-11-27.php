@@ -111,3 +111,5 @@ ERROR - 2026-11-27 10:39:43 --> Query error: Column 'hadir' cannot be null - Inv
 ERROR - 2026-11-27 10:39:43 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 290, NULL)
 ERROR - 2026-11-27 10:39:43 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 322, NULL)
 ERROR - 2026-11-27 10:39:43 --> Query error: Column 'hadir' cannot be null - Invalid query: INSERT INTO `tpengajuan_akad_peserta` (`pengajuan_id`, `projid`, `sprno`, `hadir`) VALUES (15, 8, 300, NULL)
+ERROR - 2026-11-27 21:45:35 --> Severity: Warning --> Division by zero D:\1_laragon\www\rumaji\application\views\lap_per_prfktr.php 62
+ERROR - 2026-11-27 21:51:21 --> 404 Page Not Found: 

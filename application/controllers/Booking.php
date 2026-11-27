@@ -4,7 +4,7 @@ class Booking extends CI_Controller
 {
     public function __construct() { parent::__construct();$this->load->model('mod_booking'); }
     private function json($data,$status=200) { return $this->output->set_status_header($status)->set_content_type('application/json')->set_output(json_encode($data)); }
-    private function access() { $this->lib->check_login();$this->lib->check_auth($this->session->userdata('roleid'),'PJ','T001','R'); }
+    private function access($action='R') { $this->lib->check_login();if (!$this->mod_booking->allowed($action)) { show_error('Anda tidak mempunyai akses booking ini.',403);exit; } }
     public function index()
     {
         if (!$this->session->userdata('booking_token')) $this->session->set_userdata('booking_token',bin2hex(random_bytes(32)));
@@ -90,7 +90,7 @@ class Booking extends CI_Controller
         $release=$this->db->query('SELECT id FROM mlot WHERE id=? AND siteplan_active=1 AND release_saved_at IS NOT NULL FOR UPDATE',array($unit->release_lot_id))->row();
         $locked=$this->db->query('SELECT status FROM mkav WHERE projid=? AND blok=? AND no=? FOR UPDATE',array($unit->projid,$unit->blok,$unit->no))->row();
         $ready=$release ? $this->mod_booking->unit($unit->projid,$unit->blok,$unit->no,$unit->release_lot_id) : NULL;
-        $taken=$this->db->where_in('status',array('Baru','Pending','Disetujui'))->get_where('tbooking',array('projid'=>$unit->projid,'blok'=>$unit->blok,'no'=>$unit->no))->row();
+        $taken=$this->db->where('deleted_at',NULL)->where_in('status',array('Baru','Pending','Disetujui'))->get_where('tbooking',array('projid'=>$unit->projid,'blok'=>$unit->blok,'no'=>$unit->no))->row();
         if (!$ready||!$locked||!in_array($locked->status,array('BLA','BTL'),TRUE)||$taken) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Unit tidak lagi ready pada Lot Release ini. Silakan pilih unit lain.'),409);return; }
         $latestPrice=$this->mod_booking->price($ready);
         if ((float)$latestPrice->hrgstd+(float)$latestPrice->byttp!==$total) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Harga Lot Release berubah. Pilih ulang unit untuk memperbarui harga.'),409);return; }
@@ -99,13 +99,36 @@ class Booking extends CI_Controller
         if (!$ok||!$this->db->trans_status()) { $this->db->trans_rollback();foreach ($paths as $path) unlink($path);$this->json(array('message'=>'Booking gagal disimpan. Silakan coba kembali.'),500);return; }
         $this->db->trans_commit();$this->json(array('message'=>'Booking berhasil dikirim. Pengajuan konsumen siap ditindaklanjuti.','no_registrasi'=>$registration));
     }
-    public function admin() { $this->access();$this->load->view('list_booking',array('title'=>'Booking')); }
+    public function admin() { $this->listing(FALSE); }
+    public function arsip() { $this->listing(TRUE); }
+    private function listing($archived)
+    {
+        $this->access();
+        if (!$this->session->userdata('booking_delete_token')) $this->session->set_userdata('booking_delete_token',bin2hex(random_bytes(32)));
+        $this->load->view('list_booking',array('title'=>$archived?'Arsip Booking':'Booking','archived'=>$archived,'can_delete'=>$this->mod_booking->allowed('D')));
+    }
+    public function delete($id=NULL) { $this->remove($id,FALSE); }
+    public function purge($id=NULL) { $this->remove($id,TRUE); }
+    private function remove($id,$permanent)
+    {
+        $this->access('D');
+        if ($this->input->method()!=='post') { show_error('Metode tidak diizinkan.',405);return; }
+        $token=$this->session->userdata('booking_delete_token');
+        if (!$token || !hash_equals($token,(string)$this->input->post('token'))) { show_error('Sesi berakhir. Muat ulang halaman.',403);return; }
+        if (!$this->mod_booking->remove((int)$id,$permanent,$this->session->userdata('userid'))) { show_error('Booking tidak ditemukan atau sudah berubah. Muat ulang daftar.',409);return; }
+        $this->session->set_flashdata('booking_message',$permanent?'Booking dihapus permanen.':'Booking dipindahkan ke arsip.');
+        redirect($permanent?'booking/arsip':'booking/admin');
+    }
     public function data()
     {
         $this->access();$search=$this->input->get('search');$q=is_array($search)&&isset($search['value'])?trim((string)$search['value']):'';
-        $total=$this->db->count_all('tbooking');
+        $archived=$this->input->get('arsip')==='1';
+        $scope=$archived?'deleted_at IS NOT NULL':'deleted_at IS NULL';
+        $total=$this->db->where($scope,NULL,FALSE)->count_all_results('tbooking');
+        $this->db->where($scope,NULL,FALSE);
         if ($q!=='') $this->db->group_start()->like('nama_lengkap',$q)->or_like('no_registrasi',$q)->or_like('nama_proyek',$q)->or_like('blok',$q)->group_end();
         $filtered=$this->db->count_all_results('tbooking');
+        $this->db->where($scope,NULL,FALSE);
         if ($q!=='') $this->db->group_start()->like('nama_lengkap',$q)->or_like('no_registrasi',$q)->or_like('nama_proyek',$q)->or_like('blok',$q)->group_end();
         $length=(int)$this->input->get('length');$length=in_array($length,array(10,25,50,100),TRUE)?$length:10;
         $rows=$this->db->select('id,no_registrasi,tanggal,nama_lengkap,no_telp,nama_proyek,blok,no,marketing,booking_fee,status')->order_by('id','DESC')->get('tbooking',$length,max(0,(int)$this->input->get('start')))->result();
@@ -122,21 +145,21 @@ class Booking extends CI_Controller
     public function verify($id=NULL)
     {
         $this->access();
-        $this->lib->check_auth($this->session->userdata('roleid'),'PJ','T001','U');
+        $this->access('U');
         if ($this->input->method()!=='post') { show_error('Metode tidak diizinkan.',405);return; }
         $token=$this->session->userdata('booking_verify_token');
         if (!$token || !hash_equals($token,(string)$this->input->post('token'))) { show_error('Sesi verifikasi berakhir. Muat ulang halaman.',403);return; }
         $status=$this->input->post('status');
         if (!in_array($status,array('Pending','Disetujui','Ditolak'),TRUE)) { show_error('Status tidak valid.',422);return; }
-        $booking=$this->db->get_where('tbooking',array('id'=>(int)$id))->row();
+        $booking=$this->db->get_where('tbooking',array('id'=>(int)$id,'deleted_at'=>NULL))->row();
         if (!$booking) { show_404();return; }
         if ($booking->status==='SPR') { show_error('Booking sudah dibuat SPR dan tidak dapat diverifikasi ulang.',409);return; }
         $this->db->trans_begin();
         $stock=$this->db->query('SELECT status FROM mkav WHERE projid=? AND blok=? AND no=? FOR UPDATE',array($booking->projid,$booking->blok,$booking->no))->row();
-        $current=$this->db->query('SELECT status FROM tbooking WHERE id=? FOR UPDATE',array($booking->id))->row();
+        $current=$this->db->query('SELECT status FROM tbooking WHERE id=? AND deleted_at IS NULL FOR UPDATE',array($booking->id))->row();
         if (!$current || $current->status==='SPR') { $this->db->trans_rollback();show_error('Booking sudah dibuat SPR atau tidak ditemukan.',409);return; }
         if ($status!=='Ditolak') {
-            $other=$this->db->where('id <>',$booking->id)->where_in('status',array('Baru','Pending','Disetujui'))->get_where('tbooking',array('projid'=>$booking->projid,'blok'=>$booking->blok,'no'=>$booking->no))->row();
+            $other=$this->db->where('deleted_at',NULL)->where('id <>',$booking->id)->where_in('status',array('Baru','Pending','Disetujui'))->get_where('tbooking',array('projid'=>$booking->projid,'blok'=>$booking->blok,'no'=>$booking->no))->row();
             $sold=$this->db->get_where('tsprh',array('projid'=>$booking->projid,'blok'=>$booking->blok,'no'=>$booking->no,'status <>'=>'BTL'))->row();
             if (!$stock || !in_array($stock->status,array('BLA','BTL'),TRUE) || $other || $sold) { $this->db->trans_rollback();show_error('Unit sudah dipakai booking atau SPR lain.',409);return; }
         }

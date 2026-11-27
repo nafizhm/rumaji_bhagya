@@ -284,7 +284,7 @@ class Spr extends CI_Controller {
 	{
 		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
 		if ($this->input->get('booking_id')) {
-			$booking=$this->db->get_where('tbooking',array('id'=>(int)$this->input->get('booking_id')))->row();
+			$booking=$this->db->get_where('tbooking',array('deleted_at'=>NULL,'id'=>(int)$this->input->get('booking_id')))->row();
 			if (!$booking) { show_404();return; }
 			if ($booking->status==='SPR') { redirect('booking/admin');return; }
 			redirect('spr/input_spr2/'.rawurlencode($booking->projid).'/'.rawurlencode($booking->blok).'/'.rawurlencode($booking->no).'?booking_id='.$booking->id);return;
@@ -375,7 +375,7 @@ function input_spr2()
 	$data['stok_kavf'] = $stok_kavf;	
 	
 	if ($this->input->get('booking_id')) {
-		$booking=$this->db->get_where('tbooking',array('id'=>(int)$this->input->get('booking_id'),'projid'=>$this->uri->segment(3),'blok'=>$this->uri->segment(4),'no'=>$this->uri->segment(5)))->row();
+		$booking=$this->db->get_where('tbooking',array('deleted_at'=>NULL,'id'=>(int)$this->input->get('booking_id'),'projid'=>$this->uri->segment(3),'blok'=>$this->uri->segment(4),'no'=>$this->uri->segment(5)))->row();
 		if (!$booking || $booking->status==='SPR') { show_error('Booking tidak tersedia untuk dibuat SPR.',409);return; }
 		$data['booking_source']=$booking;
 	}
@@ -522,7 +522,7 @@ function do_input_spr()
 	if (!in_array($jenis_spr,array('Subsidi KPR','Subsidi Cash','Komersial'),TRUE)) { show_error('Pilih jenis Subsidi KPR, Subsidi Cash, atau Komersial.',422);return; }
 	$booking_source=NULL;
 	if ($this->input->post('booking_id')) {
-		$booking_source=$this->db->get_where('tbooking',array('id'=>(int)$this->input->post('booking_id'),'projid'=>$this->input->post('txt_projid'),'blok'=>$this->input->post('txt_blok'),'no'=>$this->input->post('txt_no')))->row();
+		$booking_source=$this->db->get_where('tbooking',array('deleted_at'=>NULL,'id'=>(int)$this->input->post('booking_id'),'projid'=>$this->input->post('txt_projid'),'blok'=>$this->input->post('txt_blok'),'no'=>$this->input->post('txt_no')))->row();
 		if (!$booking_source || $booking_source->status==='SPR') { show_error('Booking tidak tersedia untuk dibuat SPR.',409);return; }
 	}
 	//Check apakah stok kavling yang dibuat spr statusnya belum laku ?untuk mencegah double input
@@ -671,7 +671,7 @@ function do_input_spr()
 	$this->db->trans_start();	
 	/* ------------------------------- INPUT SPR FITUR ------------------------------ */	
 	if ($booking_source) {
-		$locked_booking=$this->db->query('SELECT status FROM tbooking WHERE id=? FOR UPDATE',array($booking_source->id))->row();
+		$locked_booking=$this->db->query('SELECT status FROM tbooking WHERE id=? AND deleted_at IS NULL FOR UPDATE',array($booking_source->id))->row();
 		if (!$locked_booking || $locked_booking->status==='SPR') {
 			$this->db->trans_rollback();show_error('Booking sudah dibuat SPR. Muat ulang daftar booking.',409);return;
 		}
