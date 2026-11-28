@@ -23,6 +23,10 @@
         var total=Number.isFinite(downCents-discountCents) ? Math.max(0,downCents-discountCents) : 0;
         form.find('[name="uang_muka_setelah_diskon"]').val(formatMoney((total/100).toFixed(2).replace('.',',')));
         validateMoney(form.find('[name="uang_muka_setelah_diskon"]')[0]);
+        var utj=form.find('[name="utj"]')[0], utjCents=Math.round(Number(rawMoney(utj.value) || 0)*100);
+        var utjTimes=Number(form.find('[name="utj_cicilan"]').val()) || 1, umTimes=Number(form.find('[name="um_cicilan"]').val()) || 1;
+        function rupiah(cents) { return 'Rp '+formatMoney((cents/100).toFixed(2).replace('.',',')); }
+        $('#release-cicilan-preview').text('UTJ: '+rupiah(utjCents/utjTimes)+' × '+utjTimes+' | UM: '+rupiah(Math.max(0,total-utjCents)/umTimes)+' × '+umTimes+' | BLL: '+rupiah(Number(rawMoney(form.find('[name="biaya_lain"]').val()) || 0)*100));
     }
     modal.on('show.bs.modal',function (event) {
         var lot=JSON.parse($(event.relatedTarget).attr('data-release'));
@@ -39,6 +43,7 @@
         calculate();
     });
     modal.on('hide.bs.modal',function (event) { if (busy) event.preventDefault(); });
+    form.find('[name="utj_cicilan"], [name="um_cicilan"]').on('input',calculate);
     money.on('input',function () {
         var cursor=this.selectionStart;
         var before=this.value.slice(0,cursor).replace(/[^\d,]/g,'').length;

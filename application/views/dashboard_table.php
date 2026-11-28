@@ -3,6 +3,7 @@
   <div class="x_title"><h2>Dashboard Perumahan <small>Data per <?php echo date('d/m/Y H:i'); ?></small></h2><div class="clearfix"></div></div>
   <div class="x_content">
     <p class="text-muted">Klik nama proyek atau angka untuk melihat rincian data.</p>
+    <p class="text-muted">Belum Laku termasuk unit batal yang kembali menjadi stok. Kolom Batal adalah bagian dari Belum Laku, sehingga tidak dijumlahkan lagi.</p>
     <div class="table-responsive">
       <table class="table table-striped table-bordered table-hover dashboard-summary">
         <colgroup><col style="width:48px"><col class="dashboard-project-col"><?php foreach ($dashboard_metrics as $key => $label): ?><col class="<?php echo in_array($key, array('jatuh_tempo','uang_masuk'), TRUE) ? 'dashboard-money-col' : 'dashboard-unit-col'; ?>"><?php endforeach; ?></colgroup>

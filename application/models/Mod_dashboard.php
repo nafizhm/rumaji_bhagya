@@ -16,7 +16,7 @@ class Mod_dashboard extends CI_Model
             COALESCE(k.subsidi,0) subsidi, COALESCE(k.komersial,0) komersial,
             COALESCE(j.total,0) jatuh_tempo, COALESCE(u.total,0) uang_masuk
             FROM mproj p
-            LEFT JOIN (SELECT projid, COUNT(*) total, SUM(status='BLA') belum_laku,
+            LEFT JOIN (SELECT projid, COUNT(*) total, SUM(status IN ('BLA','BTL')) belum_laku,
                 SUM(status='BTL') batal, SUM(status NOT IN ('BTL','AKD','BLA','AKS')) spr,
                 SUM(jenis <> 'Komersial' AND status IN ('AKD','AKS')) subsidi,
                 SUM(jenis = 'Komersial' AND status IN ('AKD','AKS')) komersial
@@ -37,7 +37,7 @@ class Mod_dashboard extends CI_Model
             $this->db->from('tkwt d')->where('d.projid', $projid)->where('d.btl', '');
         } else {
             $this->db->from('mkav d')->where('d.projid', $projid);
-            if ($metric === 'belum_laku') $this->db->where('d.status', 'BLA');
+            if ($metric === 'belum_laku') $this->db->where_in('d.status', array('BLA','BTL'));
             if ($metric === 'batal') $this->db->where('d.status', 'BTL');
             if ($metric === 'spr') $this->db->where_not_in('d.status', array('BTL','AKD','BLA','AKS'));
             if (in_array($metric, array('subsidi','komersial','akad'), TRUE)) {

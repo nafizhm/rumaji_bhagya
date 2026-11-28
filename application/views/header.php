@@ -1,13 +1,13 @@
 <?php
 // A partially uploaded module must not interrupt every page while rendering navigation.
-$optionalMenuAccess=function($mid,$accessTable,$requiredTables,$moduleFile) {
+$optionalMenuAccess=function($mid,$accessTable,$requiredTables,$moduleFile,$moid='PJ') {
     $ci =& get_instance();
     if (!is_file(APPPATH.'controllers/'.$moduleFile.'.php')) return FALSE;
     foreach (array_merge(array($accessTable),$requiredTables) as $table) if (!$ci->db->table_exists($table)) return FALSE;
     if ($ci->session->userdata('roleid')==='ADM') return TRUE;
     $user=$ci->db->get_where($accessTable,array('userid'=>$ci->session->userdata('userid')))->row();
     if ($user) return !empty($user->r);
-    $role=$ci->db->get_where('mauth',array('roleid'=>$ci->session->userdata('roleid'),'moid'=>'PJ','mid'=>$mid))->row();
+    $role=$ci->db->get_where('mauth',array('roleid'=>$ci->session->userdata('roleid'),'moid'=>$moid,'mid'=>$mid))->row();
     return $role && !empty($role->r);
 };
 ?>
@@ -377,6 +377,9 @@ $optionalMenuAccess=function($mid,$accessTable,$requiredTables,$moduleFile) {
                     <ul class="nav child_menu">
                       <li><a href="<?php echo site_url('inv/lap_per_prfktr'); ?>">Laporan Perkiraan Profit Kotor
                         </a></li>
+                      <?php if ($optionalMenuAccess('R002','minvestor_potensi_akses_user',array('tinvestor_cutoff','tinvestor_cutoff_item'),'Investor_potensi','IN')): ?>
+                      <li><a href="<?php echo site_url('investor_potensi'); ?>">Laporan Kontrol Potensi</a></li>
+                      <?php endif; ?>
                     </ul>
                   </li>
                 </ul>

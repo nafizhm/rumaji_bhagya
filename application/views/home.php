@@ -62,7 +62,7 @@
                 </div>
               </div>
             </div>
-            <?php $this->load->view('dashboard_table'); ?>
+            <?php if (!empty($show_dashboard)) $this->load->view('dashboard_table'); ?>
           </div>
         </div>
         <!-- /page content -->

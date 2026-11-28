@@ -1,0 +1,22 @@
+EXPORT BHAGYA_V2 - 28 NOVEMBER 2026
+
+1. Buat database BARU KOSONG di panel hosting. Nama boleh mengikuti prefix akun hosting.
+2. Tambahkan user database ke database baru dengan hak akses aplikasi yang diperlukan.
+3. Pilih database baru tersebut di phpMyAdmin, lalu Import bhagya_v2-hosting-20261128.zip (atau file .sql).
+4. Ubah application/config/database.php hosting sesuai nama database, username, dan password hosting.
+5. Salin juga file aplikasi terbaru dan application/uploads beserta isinya. SQL tidak membawa file lampiran fisik.
+
+Export sudah berisi struktur dan data terbaru, termasuk arsip booking dan akses CRUD faizal.
+Tidak perlu menjalankan ulang migrasi lama pada database hasil import ini.
+Jangan import ke database yang sudah berisi tabel; export ini ditujukan untuk import baru.
+
+Kompatibilitas:
+- Collation MySQL 8 utf8mb4_0900_ai_ci diganti utf8mb4_unicode_ci.
+- Tidak ada DEFINER, CREATE DATABASE, atau USE yang mengunci nama database lokal.
+- View cetak_byr_v menggunakan tabel dari database yang dipilih.
+- Kolom generated active_unit tetap dipertahankan; import membutuhkan MySQL 5.7+ atau MariaDB yang mendukung generated column berindeks.
+- Procedure update_role_menu dan trigger mmenu_after_insert tidak disertakan pada file utama untuk menghindari kegagalan izin CREATE ROUTINE/TRIGGER hosting.
+  Keduanya hanya mengisi default hak role ketika baris menu baru dimasukkan langsung ke mmenu; data menu/hak akses yang sudah ada tetap ikut export.
+
+Pengujian dilakukan dengan import ke database sementara MySQL 8.0.30, lalu membandingkan semua isi tabel dan membaca view.
+Versi serta batas upload hosting belum diketahui, jadi pengujian ini tidak menjamin semua konfigurasi hosting.

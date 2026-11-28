@@ -2,6 +2,9 @@
 $money=function ($value) { return number_format((float)$value,2,',','.'); };
 $months=array(1=>'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember');
 $releaseDate='';
+$utjTimes=max(1,(int)$row->utj_cicilan);
+$umTimes=max(1,(int)$row->um_cicilan);
+$umTotal=max(0,(float)$row->uang_muka_setelah_diskon-(float)$row->utj);
 if ($row->tanggal_release) {
     $time=strtotime($row->tanggal_release);
     $releaseDate=date('j',$time).' '.$months[(int)date('n',$time)].' '.date('Y',$time);
@@ -37,6 +40,14 @@ table.grid { width:100%; border-collapse:collapse; table-layout:fixed; }
 .units .number { width:9%; }
 .units .lot { width:12.33%; }
 .bottom { page-break-inside:avoid; }
+.standard-layout { display:flex; gap:22px; align-items:flex-start; margin-top:12px; }
+.standard { width:57%; border-collapse:collapse; }
+.standard caption { text-align:left; font-weight:bold; text-decoration:underline; margin-bottom:7px; }
+.standard td { padding:5px 3px; text-align:right; }
+.standard td:first-child { text-align:left; }
+.standard .total td { border-top:1px solid #222; font-weight:bold; }
+.standard-layout .signatures { width:43%; margin:0; }
+.standard-layout .signature-line { width:110px; }
 .signatures { width:100%; margin:22px 0 18px; border-collapse:collapse; }
 .signatures td { text-align:center; width:50%; }
 .signatures .space td { height:58px; }
@@ -87,7 +98,16 @@ table.grid { width:100%; border-collapse:collapse; table-layout:fixed; }
 <td><?php echo $unit ? $pageIndex*60+$position+1 : '&nbsp;'; ?></td><td><?php echo $unit ? html_escape($unit->blok) : '&nbsp;'; ?></td><td><?php echo $unit ? html_escape($unit->no) : '&nbsp;'; ?></td><td><?php echo $unit ? html_escape($row->kode_lot) : '&nbsp;'; ?></td>
 <?php endfor; ?></tr><?php endfor; ?></tbody></table>
 <div class="bottom">
+<div class="standard-layout">
+<table class="standard"><caption>STANDARD</caption><tbody>
+<tr><td>UTJ</td><td><?php echo $money($row->utj/$utjTimes); ?></td><td>× <?php echo $utjTimes; ?></td><td><?php echo $money($row->utj); ?></td></tr>
+<tr><td>UM</td><td><?php echo $money($umTotal/$umTimes); ?></td><td>× <?php echo $umTimes; ?></td><td><?php echo $money($umTotal); ?></td></tr>
+<tr class="total"><td colspan="3">TOTAL UTJ + UM</td><td><?php echo $money($row->uang_muka_setelah_diskon); ?></td></tr>
+<tr><td>BLL</td><td></td><td></td><td><?php echo $money($row->biaya_lain); ?></td></tr>
+<tr class="total"><td colspan="3">BIAYA UM TOTAL</td><td><?php echo $money($row->uang_muka_setelah_diskon+$row->biaya_lain); ?></td></tr>
+</tbody></table>
 <table class="signatures"><tr><td>Dibuat oleh,</td><td>Disetujui oleh,</td></tr><tr class="space"><td></td><td></td></tr><tr><td><span class="signature-line"></span></td><td><span class="signature-line"></span></td></tr></table>
+</div>
 <div class="features"><strong>TAMBAHAN FITUR (bila ada)</strong>
 <p>BIAYA HOOK = Rp <?php echo $money($row->biaya_hook); ?></p>
 <p>BIAYA KELEBIHAN TANAH = Rp <?php echo $money($row->biaya_kelebihan_tanah); ?> per meter</p>

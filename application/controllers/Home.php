@@ -65,8 +65,11 @@ class Home extends CI_Controller {
 							    'nama_modul'  => 'Modul Keuangan');
 		}
 		$this->session->set_userdata($modul_sess);
-		$data['dashboard_rows'] = $this->mod_dashboard->summary();
-		$data['dashboard_metrics'] = $this->mod_dashboard->metrics();
+		$data['show_dashboard'] = $modul_sess['modul'] === 'penjualan';
+		if ($data['show_dashboard']) {
+			$data['dashboard_rows'] = $this->mod_dashboard->summary();
+			$data['dashboard_metrics'] = $this->mod_dashboard->metrics();
+		}
 		$this->load->view('home',$data);
 	}
 	

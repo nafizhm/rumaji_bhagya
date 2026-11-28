@@ -79,6 +79,8 @@ class Auth extends CI_Controller {
 											   'userid'  => $this->input->post('txt_usnam'),
 											   'roleid'  => $row_user->roleid,
 											   'logged_in' => TRUE ,
+											   'modul' => '',
+											   'nama_modul' => '',
 											   'name' => $row_user->namusr
 										   );
 								$this->session->set_userdata($usr_sess);
