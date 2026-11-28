@@ -4,6 +4,7 @@
         <div class="right_col" role="main">
           <div class="">
             <div class="page-title">
+              <div class="pull-right text-right" style="padding:8px 15px"><div>Saldo Deposit</div><strong style="font-size:30px;color:#169f85">Rp <?php echo number_format((float)$deposit,2,',','.'); ?></strong></div>
               <div class="title_left">
                 <h3>Tambah Pembayaran > List Bayar</h3>
               </div>
@@ -90,6 +91,14 @@
                       ?></td>
                       <td>
                        <div class="btn-group btn-group-sm">
+                       <?php foreach ($deposit_only_receipts as $depositReceipt): ?>
+                       <?php if ($depositReceipt->tipe===$row->tipe && (int)$depositReceipt->ang===(int)$row->ang): $depositNo='DEP-'.(int)$depositReceipt->projid.'-'.str_pad((string)(int)$depositReceipt->kwtno,6,'0',STR_PAD_LEFT); ?>
+                       <a target="_blank" rel="noopener" href="<?php echo site_url('byr/cetak_deposit/'.$depositReceipt->projid.'/'.$depositReceipt->kwtno.'/'.$depositReceipt->sprno); ?>" class="btn btn-warning" title="<?php echo html_escape($depositNo); ?>"><i class="fa fa-print"></i> Cetak Deposit</a>
+                       <?php endif; ?>
+                       <?php endforeach; ?>
+                       <?php if (isset($deposit_receipts[$row->kwtno])): ?>
+                       <a target="_blank" rel="noopener" href="<?php echo site_url('byr/cetak_deposit/'.$row->projid.'/'.$row->kwtno.'/'.$row->sprno); ?>" class="btn btn-warning" title="Cetak kwitansi deposit"><i class="fa fa-print"></i> Cetak Deposit</a>
+                       <?php endif; ?>
                       
                        <?php if ($row->status == 'BLN' ) 
 					   { 
@@ -114,6 +123,18 @@
 					?>
                       </tbody>
                     </table>
+                    <?php if (!empty($deposit_only_receipts)): ?>
+                    <h4>Setoran Deposit — Belum Dialokasikan ke Cicilan</h4>
+                    <div class="table-responsive"><table class="table table-bordered table-striped">
+                    <thead><tr><th>No. Kwitansi Deposit</th><th>Tanggal</th><th>Jumlah Deposit</th><th>Verifikasi</th><th>Action</th></tr></thead><tbody>
+                    <?php foreach ($deposit_only_receipts as $receipt): $depNumber='DEP-'.(int)$receipt->projid.'-'.str_pad((string)(int)$receipt->kwtno,6,'0',STR_PAD_LEFT); ?>
+                    <tr><td><?php echo html_escape($depNumber); ?></td><td><?php echo $this->lib->disp_date($receipt->tgl); ?></td><td>Rp <?php echo number_format($receipt->deposit,2,',','.'); ?></td><td><?php echo $receipt->verby!==''?'Sudah diverifikasi':'Belum diverifikasi'; ?></td><td>
+                    <a class="btn btn-warning btn-sm" target="_blank" rel="noopener" href="<?php echo site_url('byr/cetak_deposit/'.$receipt->projid.'/'.$receipt->kwtno.'/'.$receipt->sprno); ?>"><i class="fa fa-print"></i> Cetak Deposit</a>
+                    <button type="button" class="BtlDialog btn btn-danger btn-sm" data-toggle="modal" data-target=".bs-example-modal-lg2" data-sprno="<?php echo (int)$receipt->sprno; ?>" data-projid="<?php echo (int)$receipt->projid; ?>" data-tipe="<?php echo html_escape($receipt->tipe); ?>" data-ang="<?php echo (int)$receipt->ang; ?>" data-tot="0" data-kwtno="<?php echo (int)$receipt->kwtno; ?>" data-kwtnodis="<?php echo html_escape($depNumber); ?>">Batal Deposit</button>
+                    </td></tr>
+                    <?php endforeach; ?>
+                    </tbody></table></div>
+                    <?php endif; ?>
                   </div>
                 </div>
               </div>
@@ -132,12 +153,30 @@
                         </div>
                         <div class="modal-body">
                         <form action="<?php echo $form_action; ?>" method="post" name="form1" id="form1" class="form-horizontal form-label-left">
+                        <input type="hidden" name="byr_token" value="<?php echo html_escape($this->session->userdata('byr_token')); ?>">
+                        <?php if ((float)$deposit>0): ?>
+                        <div class="form-group">
+                          <label class="control-label col-md-3 col-sm-3 col-xs-12">Deposit Sebelumnya</label>
+                          <div class="col-md-6 col-sm-6 col-xs-12">
+                            <p class="form-control-static" style="font-size:24px;font-weight:bold;color:#169f85">Rp <?php echo number_format((float)$deposit,2,',','.'); ?></p>
+                            <small>Saldo deposit dari pembayaran sebelumnya pada SPR ini.</small>
+                          </div>
+                        </div>
+                        <?php endif; ?>
                         <input type="hidden" id="txt_sprno" name="txt_sprno" />
                         <input type="hidden"  id="txt_projid" name="txt_projid" />
                         <input type="hidden"  id="txt_ang" name="txt_ang" />
                          <input type="hidden"  id="txt_tipe" name="txt_tipe" />
                         
                          <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="txt_jumlah_bayar">Jumlah Bayar</label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <input name="txt_jumlah_bayar" id="txt_jumlah_bayar" class="form-control" required inputmode="decimal" data-inputmask="'alias': 'currency', 'prefix' : '', 'suffix': '','radixPoint': ',', 'groupSeparator': '.', 'autoGroup': true">
+                          <small>Jika pembayaran dan deposit cukup, cicilan dilunasi. Jika belum cukup, seluruh dana baru masuk deposit dan cicilan tetap belum lunas.</small>
+                          <div id="byr-deposit-preview" class="text-success" aria-live="polite"></div>
+                        </div>
+                      </div>
+                      <div class="form-group">
                         <label class="control-label col-md-3 col-sm-3 col-xs-12">Total Bayar
                         </label>
                         <div class="col-md-6 col-sm-6 col-xs-12">
@@ -196,6 +235,7 @@
                         </div>
                         <div class="modal-body">
                         <form action="<?php echo $form_action2; ?>" method="post" name="form2" id="form2" class="form-horizontal form-label-left">
+                        <input type="hidden" name="byr_token" value="<?php echo html_escape($this->session->userdata('byr_token')); ?>">
                         <input type="hidden" id="txt_sprno2" name="txt_sprno2" />
                         <input type="hidden"  id="txt_projid2" name="txt_projid2" />
                         <input type="hidden"  id="txt_ang2" name="txt_ang2" />
@@ -256,6 +296,9 @@ $(document).on("click", ".ByrDialog", function () {
 	 $("#txt_sprno").val($(this).data('sprno'));
 	  $("#txt_projid").val($(this).data('projid'));
 	  $("#txt_total").val($(this).data('tot'));
+	  $('#txt_jumlah_bayar').data('tagihan',Number($(this).data('tot')));
+	  $('#txt_jumlah_bayar').val(Number($(this).data('tot')).toFixed(2).replace('.',','));
+	  $('#txt_jumlah_bayar').trigger('input');
 	  $("#txt_ang").val($(this).data('ang'));
 	   $("#txt_tipe").val($(this).data('tipe'));
 	  $( "#myModalLabel2" ).html( "Input Pembayaran " + $(this).data('tipe_txt') +" ( Angsuran Ke "+ $(this).data('ang')+" )");
@@ -264,6 +307,20 @@ $(document).on("click", ".ByrDialog", function () {
 });
 
 $(function() {
+    $('#txt_jumlah_bayar').on('input change',function () {
+        var amount=Number(this.value.replace(/\./g,'').replace(',','.'));
+        var due=Number($(this).data('tagihan'));
+        var saldo=<?php echo json_encode((float)$deposit); ?>;
+        var used=Math.max(0,Math.round((due-amount)*100)/100);
+        var extra=Math.max(0,Math.round((amount-due)*100)/100);
+        function rp(value) { return value.toLocaleString('id-ID',{style:'currency',currency:'IDR'}); }
+        this.setCustomValidity(amount===0 && saldo<due?'Isi jumlah bayar lebih dari nol.':'');
+        if (used>saldo) {
+            $('#byr-deposit-preview').text('Seluruh dana '+rp(amount)+' masuk deposit. Saldo deposit menjadi '+rp(saldo+amount)+'. Cicilan tetap BELUM LUNAS.');
+        } else {
+            $('#byr-deposit-preview').text('Deposit digunakan: '+rp(used)+' | Tambahan deposit: '+rp(extra)+' | Sisa deposit: '+rp(saldo-used+extra));
+        }
+    });
     $('input[name="txt_tgl"]').daterangepicker({
         singleDatePicker: true,
         showDropdowns: true,

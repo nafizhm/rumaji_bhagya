@@ -350,7 +350,7 @@ class Spr extends CI_Controller {
 						'hargastd' =>$this->lib->format_idr($hrgstd),
 						'hargaft' =>$this->lib->format_idr($tothrgf),
 						'hargatot' =>$this->lib->format_idr($hrgtot),
-						'pilihan' =>'<a href="'.site_url('spr/input_spr2/'.$row->projid.'/'. $row->blok.'/'. $row->no).'" class="btn btn-primary '.$disable.'"><i class="fa fa-calculator"></i> Buat SPR</a>'
+						'pilihan' =>'<button type="button" class="btn btn-default" disabled title="SPR hanya dapat dibuat melalui menu Booking"><i class="fa fa-calculator"></i> Buat SPR</button>'
 						
 						);
 						
@@ -360,9 +360,19 @@ class Spr extends CI_Controller {
 		
 	}
 	
+private function require_booking_creation($posted=FALSE)
+{
+	$id=$posted?$this->input->post('booking_id'):$this->input->get('booking_id');
+	if (!is_string($id) || !ctype_digit($id) || (int)$id<1) {
+		show_error('SPR baru hanya boleh dibuat melalui menu Booking.',403);return FALSE;
+	}
+	return TRUE;
+}
+
 function input_spr2()
 {
 	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
+	if (!$this->require_booking_creation()) return;
 	
 	$data['title'] = 'Tambah SPR > Input Data Konsumen & Pembayaran';
 	$data['form_action'] = site_url('spr/do_input_spr');	
@@ -384,6 +394,10 @@ function input_spr2()
 
 function check_spr()
 {
+	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
+	if (!$this->require_booking_creation(TRUE)) return;
+	$booking=$this->db->get_where('tbooking',array('deleted_at'=>NULL,'id'=>(int)$this->input->post('booking_id'),'projid'=>$this->input->post('txt_projid'),'blok'=>$this->input->post('txt_blok'),'no'=>$this->input->post('txt_no')))->row();
+	if (!$booking || $booking->status==='SPR') { show_error('Booking tidak tersedia untuk dibuat SPR.',409);return; }
 	$stok_kav = $this->mod_kav->get_kav_spr($this->input->post('txt_projid'),$this->input->post('txt_blok'),$this->input->post('txt_no'))->result();
 	$data['stok_kav'] = $stok_kav;	
 	
@@ -517,6 +531,8 @@ function check_spr()
 function do_input_spr()
 {
 	$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
+	if ($this->input->method()!=='post') { show_error('Metode tidak diizinkan.',405);return; }
+	if (!$this->require_booking_creation(TRUE)) return;
 	$jenis_spr=$this->input->post('rd_jenis');
 	if ($jenis_spr==='Subsidi') $jenis_spr='Subsidi KPR';
 	if (!in_array($jenis_spr,array('Subsidi KPR','Subsidi Cash','Komersial'),TRUE)) { show_error('Pilih jenis Subsidi KPR, Subsidi Cash, atau Komersial.',422);return; }

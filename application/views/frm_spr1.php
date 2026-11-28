@@ -18,6 +18,7 @@
                   </div>
                    <?php $this->lib->disp_msg(); ?>
                   <div class="x_content">
+                    <div class="alert alert-info">Pembuatan SPR langsung dinonaktifkan. Buat SPR melalui <a href="<?php echo site_url('booking/admin'); ?>">menu Booking</a>.</div>
                     <br />
                     <form id="demo-form2" class="form-horizontal form-label-left" method="post">
                      

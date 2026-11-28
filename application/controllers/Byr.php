@@ -261,6 +261,8 @@ class Byr extends CI_Controller
 
 		//Cek tipe kwitansi
 		foreach ($kwt as $row);
+		if ($row->total==0 && $row->deposit>0) { redirect('byr/cetak_deposit/'.$row->projid.'/'.$row->kwtno.'/'.$row->sprno); return; }
+		$data['deposit_references']=$this->mod_kwt->deposit_references($row);
 		if ($row->tipe == 'UBT') {
 			$bank = $this->mod_bank->get_bankacc2($this->uri->segment(3), 'KK')->result();
 		} else {
@@ -273,6 +275,21 @@ class Byr extends CI_Controller
 		$this->load->library('pdf');
 
 		$this->pdf->load_view('print_kwt', $data, $filename);
+	}
+
+	function cetak_deposit($projid=0,$kwtno=0,$sprno=0)
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'R');
+		$receipt=$this->db->get_where('tkwt',array('projid'=>(int)$projid,'kwtno'=>(int)$kwtno,'sprno'=>(int)$sprno))->row();
+		if (!$receipt || $receipt->deposit<=0 || $receipt->btl==='1') { show_404(); return; }
+		$pending=$this->db->query("SELECT COUNT(*) total FROM tkwt WHERE projid=? AND sprno=? AND (total>0 OR deposit>0) AND btl<>'1' AND verby='' AND crdat>=?",array((int)$projid,(int)$sprno,$_SERVER['TGL_VER']))->row()->total;
+		if ($pending) { show_error('Tidak bisa cetak kwitansi deposit, mohon verifikasi dulu kwitansi sebelumnya.',403); return; }
+		$number='DEP-'.(int)$projid.'-'.str_pad((string)(int)$kwtno,6,'0',STR_PAD_LEFT);
+		$dataDepositOnly=$receipt->total==0;
+		$receipt->total=$receipt->deposit;
+		$data=array('sprh'=>$this->mod_spr->get_sprh((int)$sprno,(int)$projid)->result(),'kwt'=>array($receipt),'bank'=>$this->mod_bank->get_bankacc2((int)$projid,$receipt->tipe==='UBT'?'KK':'KB')->result(),'deposit_number'=>$number,'deposit_only'=>$dataDepositOnly);
+		$this->load->library('pdf');
+		$this->pdf->load_view('print_kwt',$data,$number);
 	}
 
 	function list_byr()
@@ -288,6 +305,11 @@ class Byr extends CI_Controller
 		$data['subtitle'] = ' No. SPR : ' . $this->lib->no_spr($this->uri->segment(4)) . ' Blok/No: ' . $row_sprh->blok . $row_sprh->no . ' Konsumen: ' . $row_sprh->nama;
 
 		$data['status'] = $row_sprh->status;
+		if (!$this->session->userdata('byr_token')) $this->session->set_userdata('byr_token',bin2hex(random_bytes(32)));
+		$data['deposit']=$this->db->query("SELECT COALESCE(SUM(deposit-deposit_digunakan),0) saldo FROM tkwt WHERE projid=? AND sprno=? AND btl<>'1'",array($this->uri->segment(3),$this->uri->segment(4)))->row()->saldo;
+		$data['deposit_receipts']=array();
+		$data['deposit_only_receipts']=$this->db->query("SELECT * FROM tkwt WHERE projid=? AND sprno=? AND total=0 AND deposit>0 AND btl<>'1' ORDER BY kwtno DESC",array($this->uri->segment(3),$this->uri->segment(4)))->result();
+		foreach ($this->db->query("SELECT kwtno,deposit FROM tkwt WHERE projid=? AND sprno=? AND btl<>'1' AND deposit>0",array($this->uri->segment(3),$this->uri->segment(4)))->result() as $receipt) $data['deposit_receipts'][$receipt->kwtno]=$receipt->deposit;
 		$data['list_sprp']  = $this->mod_spr->get_list_sprp($this->uri->segment(3), $this->uri->segment(4))->result();
 		$data['form_action']  = site_url('byr/do_input_byr');
 		$data['form_action2']  = site_url('byr/do_input_btl');
@@ -297,6 +319,21 @@ class Byr extends CI_Controller
 	function do_input_byr()
 	{
 		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'C');
+		if ($this->input->method()!=='post') show_error('Metode tidak diizinkan.',405);
+		if (!$this->session->userdata('byr_token') || !hash_equals((string)$this->session->userdata('byr_token'),(string)$this->input->post('byr_token'))) show_error('Sesi formulir tidak valid. Muat ulang halaman.',403);
+		$received=$this->input->post('txt_jumlah_bayar');
+		if (!is_string($received) || !preg_match('/^(?:\d{1,12}|\d{1,3}(?:\.\d{3}){1,3})(?:,\d{1,2})?$/D',$received)) show_error('Jumlah bayar tidak valid.',422);
+		$receivedCents=(int)round((float)str_replace(array('.',','),array('','.'),$received)*100);
+		$this->db->trans_start();
+		$this->db->query('SELECT projid FROM mproj WHERE projid=? FOR UPDATE',array($this->input->post('txt_projid')));
+		$plan=$this->db->query('SELECT p.*,h.status spr_status FROM tsprp p JOIN tsprh h ON h.projid=p.projid AND h.sprno=p.sprno WHERE p.projid=? AND p.sprno=? AND p.tipe=? AND p.ang=? FOR UPDATE',array($this->input->post('txt_projid'),$this->input->post('txt_sprno'),$this->input->post('txt_tipe'),$this->input->post('txt_ang')))->row();
+		if (!$plan || $plan->status!=='BLN' || $plan->spr_status==='BTL') { $this->db->trans_rollback(); show_error('Tagihan sudah dibayar atau tidak dapat dibayar. Muat ulang halaman.',409); return; }
+		$dueCents=(int)round($plan->total*100);
+		$balance=$this->db->query("SELECT COALESCE(SUM(deposit-deposit_digunakan),0) saldo FROM tkwt WHERE projid=? AND sprno=? AND btl<>'1'",array($plan->projid,$plan->sprno))->row()->saldo;
+		$balanceCents=(int)round($balance*100);
+		if ($dueCents<=0 || ($receivedCents===0 && $balanceCents<$dueCents)) { $this->db->trans_rollback(); show_error('Isi jumlah bayar lebih dari nol atau gunakan saldo deposit yang cukup.',422); return; }
+		$depositOnly=$receivedCents+$balanceCents<$dueCents;
+		$usedCents=$depositOnly?0:max(0,$dueCents-$receivedCents);
 
 		foreach ($this->mod_spr->cek_sprp($this->input->post('txt_sprno'), $this->input->post('txt_projid'), $this->input->post('txt_tipe'), $this->input->post('txt_ang'))->result() as $row_sprp);
 
@@ -316,7 +353,10 @@ class Byr extends CI_Controller
 			'tgl' => $this->lib->conv_date_to_int($this->input->post('txt_tgl')),
 			'ket' => $this->input->post('txt_ket'),
 			'byr' => $this->input->post('cb_byr'),
-			'total' => $this->lib->convert_idr_to_num($this->input->post('txt_total')),
+			'total' => $depositOnly?0:$dueCents/100,
+			'jumlah_bayar' => number_format($receivedCents/100,2,'.',''),
+			'deposit' => number_format(($depositOnly?$receivedCents:max(0,$receivedCents-$dueCents))/100,2,'.',''),
+			'deposit_digunakan' => number_format($usedCents/100,2,'.',''),
 			'crby' => $this->session->userdata('userid'),
 			'crdat' => date('Y-m-d')
 		);
@@ -325,9 +365,8 @@ class Byr extends CI_Controller
 			'status' => 'LNS',
 		);
 
-		$this->db->trans_start();
 		$this->mod_kwt->input_kwt($kwt);
-		$this->mod_spr->update_sprp($this->input->post('txt_projid'), $this->input->post('txt_sprno'), $this->input->post('txt_tipe'), $this->input->post('txt_ang'), $sprp);
+		if (!$depositOnly) $this->mod_spr->update_sprp($this->input->post('txt_projid'), $this->input->post('txt_sprno'), $this->input->post('txt_tipe'), $this->input->post('txt_ang'), $sprp);
 		$this->lib->commit_no($this->input->post('txt_projid'), $kwtno, 'KWT');
 
 		/*Disable jika penurunan KPR sudah lunas status langsung AKAD => request by anton 28/06/2019
@@ -368,6 +407,10 @@ class Byr extends CI_Controller
 			$this->session->set_flashdata('error', 'Input pembayaran gagal!');
 			redirect('byr/list_byr/' . $this->input->post('txt_projid') . '/' . $this->input->post('txt_sprno'));
 		} else {
+			if ($depositOnly) {
+				$this->session->set_flashdata('ok','Dana berhasil disimpan seluruhnya sebagai deposit. Cicilan masih belum lunas. Silakan verifikasi kwitansi deposit sebelum mencetak.');
+				redirect('byr/list_byr/'.$plan->projid.'/'.$plan->sprno); return;
+			}
 			$this->session->set_flashdata('ok', 'Input pembayaran sukses, no kwitansi : ' . $this->lib->no_kwt($kwtno) . '<a target="_blank" href="' . site_url('byr/cetak_kwt/' . $this->input->post('txt_projid') . '/' . $kwtno . '/' . $this->input->post('txt_sprno')) . '"> Klik disini untuk cetak kwitansi</a>');
 			redirect('byr/list_byr/' . $this->input->post('txt_projid') . '/' . $this->input->post('txt_sprno'));
 		}
@@ -376,6 +419,14 @@ class Byr extends CI_Controller
 	function do_input_btl()
 	{
 		$this->lib->check_auth($this->session->userdata('roleid'), $this->moid, $this->mid, 'U');
+		if ($this->input->method()!=='post') show_error('Metode tidak diizinkan.',405);
+		if (!$this->session->userdata('byr_token') || !hash_equals((string)$this->session->userdata('byr_token'),(string)$this->input->post('byr_token'))) show_error('Sesi formulir tidak valid. Muat ulang halaman.',403);
+		$this->db->trans_start();
+		$this->db->query('SELECT projid FROM mproj WHERE projid=? FOR UPDATE',array($this->input->post('txt_projid2')));
+		$receipt=$this->db->query('SELECT * FROM tkwt WHERE projid=? AND kwtno=? AND sprno=? FOR UPDATE',array($this->input->post('txt_projid2'),$this->input->post('txt_kwtno'),$this->input->post('txt_sprno2')))->row();
+		if (!$receipt || $receipt->btl==='1') { $this->db->trans_rollback(); show_error('Kwitansi tidak tersedia atau sudah dibatalkan.',409); return; }
+		$balance=$this->db->query("SELECT COALESCE(SUM(deposit-deposit_digunakan),0) saldo FROM tkwt WHERE projid=? AND sprno=? AND btl<>'1'",array($receipt->projid,$receipt->sprno))->row()->saldo;
+		if (round(($balance-$receipt->deposit+$receipt->deposit_digunakan)*100)<0) { $this->db->trans_rollback(); show_error('Deposit dari kwitansi ini sudah digunakan. Batalkan pembayaran yang memakai deposit terlebih dahulu.',409); return; }
 
 		/*$kwtno = $this->lib->get_no($this->input->post('txt_projid2'),'KWT');
 		
@@ -405,16 +456,14 @@ class Byr extends CI_Controller
 			'status' => 'BLN',
 		);
 
-		$this->db->trans_start();
-
 		//$this->mod_kwt->input_kwt($kwt);
 
 		$this->mod_kwt->update_kwt($this->input->post('txt_kwtno'), $this->input->post('txt_projid2'), $kwt);
 
-		$this->mod_spr->update_sprp($this->input->post('txt_projid2'), $this->input->post('txt_sprno2'), $this->input->post('txt_tipe2'), $this->input->post('txt_ang2'), $sprp);
+		if ($receipt->total>0) $this->db->where('projid',$receipt->projid)->where('sprno',$receipt->sprno)->where('tipe',$receipt->tipe)->where('ang',$receipt->ang)->where('kwtno',$receipt->kwtno)->update('tsprp',$sprp);
 		//$this->lib->commit_no($this->input->post('txt_projid2'),$kwtno,'KWT');
 
-		if ($this->input->post('txt_tipe2') == 'UMT') {
+		if ($receipt->total>0 && $receipt->tipe == 'UMT') {
 			$sprh = $this->mod_spr->get_sprh($this->input->post('txt_sprno2'), $this->input->post('txt_projid2'))->result();
 			foreach ($sprh as $row_sprh);
 

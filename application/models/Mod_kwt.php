@@ -18,7 +18,7 @@ class Mod_kwt extends CI_Model
 	function sum_rkp_kwt($projid, $tgl_from, $tgl_to)
 	{
 
-		$query = $this->db->query("SELECT SUM(total) as total, tgl 
+		$query = $this->db->query("SELECT SUM(total) as total, SUM(deposit) as deposit, tgl 
 		FROM `tkwt` 
 		WHERE btl = 0 AND projid = '" . $projid . "' 
 		AND tgl BETWEEN '" . $tgl_from . "'
@@ -32,7 +32,7 @@ class Mod_kwt extends CI_Model
 	function list_rkp_kwt($projid, $tgl)
 	{
 		$this->db->select("tkwt.kwtno, tkwt.ang, tkwt.tipe, tkwt.sprno, tkwt.projid, 
-		tkwt.tgl, tkwt.ket, tkwt.total, tkwt.byr, tsprh.nama, tsprh.blok, 
+		tkwt.tgl, tkwt.ket, tkwt.total, tkwt.deposit, tkwt.deposit_digunakan, COALESCE(tkwt.jumlah_bayar,tkwt.total) AS jumlah_bayar, tkwt.byr, tsprh.nama, tsprh.blok, 
 		tsprh.no, tsprh.tglhrg, tsprh.hrgstd, tsprh.umk,tkwt.btl,tsprf.hrgtotf,tsprf.hrgtotalf,tkwt.ketbtl,tkwt.tgl_setor,tkwt.verby,tkwt.verdat,tkwt.crdat");
 		$this->db->from("tkwt");
 		$this->db->join("tsprh", "tsprh.projid = tkwt.projid AND tsprh.sprno = tkwt.sprno");
@@ -96,6 +96,25 @@ class Mod_kwt extends CI_Model
 		$this->db->where('sprno', $sprno);
 		$this->db->where('btl <>', '1');
 		return $this->db->get($this->t_tkwt);
+	}
+
+	function deposit_references($receipt)
+	{
+		$remaining=(int)round($receipt->deposit_digunakan*100);
+		if ($remaining<=0) return array();
+		$previous=$this->db->query("SELECT COALESCE(SUM(deposit_digunakan),0) used FROM tkwt WHERE projid=? AND sprno=? AND kwtno<? AND btl<>'1'",array($receipt->projid,$receipt->sprno,$receipt->kwtno))->row()->used;
+		$skip=(int)round($previous*100); $numbers=array();
+		// Attribute the deposit balance to earlier receipts, oldest receipt first.
+		$sources=$this->db->query("SELECT kwtno,deposit FROM tkwt WHERE projid=? AND sprno=? AND kwtno<? AND deposit>0 AND btl<>'1' ORDER BY kwtno",array($receipt->projid,$receipt->sprno,$receipt->kwtno))->result();
+		foreach ($sources as $source) {
+			$available=(int)round($source->deposit*100);
+			$skipped=min($skip,$available); $skip-=$skipped; $available-=$skipped;
+			if ($available<=0) continue;
+			$numbers[]='DEP-'.(int)$receipt->projid.'-'.str_pad((string)(int)$source->kwtno,6,'0',STR_PAD_LEFT);
+			$remaining-=min($available,$remaining);
+			if ($remaining<=0) break;
+		}
+		return $numbers;
 	}
 
 	function get_kwt($projid, $kwtno)

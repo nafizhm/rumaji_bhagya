@@ -62,21 +62,55 @@ class Akad_biaya_pdf
         $this->y+=$height;
     }
 
-    private function newPage()
+    private function logo()
+    {
+        // Draw the login logo as black vector lines so it stays sharp in print.
+        $this->pdf->saveState();
+        $this->pdf->setColor(array(0,0,0));
+        $this->pdf->setStrokeColor(array(0,0,0));
+        $this->pdf->setLineStyle(4.2,'butt','miter');
+        $points=array(array(416,696),array(416,560),array(500,482),array(585,560),array(585,686),array(536,686),array(536,560),array(640,482),array(744,560),array(744,686),array(695,686),array(695,560),array(780,482),array(864,560),array(864,696));
+        $scale=110/448;$x=1050;$top=24;
+        for ($i=1;$i<count($points);$i++) {
+            $this->pdf->line($x+($points[$i-1][0]-416)*$scale,$this->height-$top-($points[$i-1][1]-482)*$scale,$x+($points[$i][0]-416)*$scale,$this->height-$top-($points[$i][1]-482)*$scale);
+        }
+        $this->font(TRUE);
+        $label='B H A G Y A';$size=15;
+        $this->text($label,$x+(110-$this->pdf->getTextWidth($size,$label))/2,$top+78,$size);
+        $label='G  R  O  U  P';$size=8;
+        $this->text($label,$x+(110-$this->pdf->getTextWidth($size,$label))/2,$top+92,$size);
+        $this->pdf->restoreState();
+    }
+
+    private function signatures()
+    {
+        if ($this->y+120>805) $this->newPage(FALSE);
+        $this->font();$top=$this->y+26;$column=array_sum($this->widths)/4;
+        foreach (array('Dibuat','Diperiksa','Diperiksa','Disetujui') as $i=>$label) {
+            $center=28+$column*($i+0.5);
+            $this->text($label,$center-$this->pdf->getTextWidth(10,$label)/2,$top,10);
+            $this->pdf->line($center-75,$this->height-$top-75,$center+75,$this->height-$top-75);
+        }
+        $this->y=$top+90;
+    }
+
+    private function newPage($withTable=TRUE)
     {
         if ($this->page) $this->pdf->newPage();
         $this->page++;$this->font(TRUE);$this->y=30;
+        $this->logo();$this->font(TRUE);
         $this->text('RINCIAN PENGAJUAN BIAYA AKAD',28,$this->y,13);$this->y+=19;
         $this->font();
         foreach ($this->heading as $label=>$value) {
             $this->text($label,28,$this->y,9);
             $this->text(':',116,$this->y,9);
-            foreach ($this->lines($value,1038,9) as $part) {
+            foreach ($this->lines($value,900,9) as $part) {
                 $this->text($part,124,$this->y,9);$this->y+=13;
             }
         }
         $this->font();$this->text('Halaman '.$this->page.' | Nominal dalam Rupiah',28,824,8);
-        $this->y+=8;$this->cells($this->labels,TRUE,TRUE);
+        $this->y=max($this->y+8,132);
+        if ($withTable) $this->cells($this->labels,TRUE,TRUE);
     }
 
     private function cents($value)
@@ -118,6 +152,7 @@ class Akad_biaya_pdf
         $values=array('','TOTAL','');
         foreach ($totals as $total) $values[]=$this->money($total);
         $values[]='';$values[]='';$this->cells($values,TRUE);
+        $this->signatures();
         return $this->pdf->output();
     }
 }

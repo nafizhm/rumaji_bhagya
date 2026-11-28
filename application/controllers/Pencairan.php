@@ -104,12 +104,13 @@ class Pencairan extends CI_Controller
         foreach ($categories as $category) {
             $value=isset($values[$category->id])?$this->amount($values[$category->id]):NULL;
             if ($value===NULL || ($latest && $value>$category->sisa)) { $error='Nilai sisa retensi tidak valid atau melebihi saldo kategori sebelumnya.';break; }
-            $total+=$value;$lines[]=array('kategori_id'=>$category->id,'nama_retensi'=>$category->nama_retensi,'nilai'=>$value);
+            if (strtoupper(trim($category->nama_retensi))!=='SBUM') $total+=$value;
+            $lines[]=array('kategori_id'=>$category->id,'nama_retensi'=>$category->nama_retensi,'nilai'=>$value);
         }
         $net=$available-$total;
         // Subsequent payments release only the reduction in recorded category balances.
         if ($latest) {
-            $previous_total=0;foreach ($categories as $category) $previous_total+=$category->sisa;
+            $previous_total=0;foreach ($categories as $category) if (strtoupper(trim($category->nama_retensi))!=='SBUM') $previous_total+=$category->sisa;
             $net=$previous_total-$total;
             if ($net>$available) $error='Pencairan melebihi sisa plafon setelah KMK proyek. Periksa saldo retensi.';
         }

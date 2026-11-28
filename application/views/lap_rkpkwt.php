@@ -42,7 +42,7 @@
                 $id = ++$no; ?>
                 <div class="panel">
                   <a class="panel-heading" role="tab" id="heading<?php echo $id; ?>" data-toggle="collapse" data-parent="#accordion" href="#collapse<?php echo $id; ?>" aria-expanded="true" aria-controls="collapse<?php echo $id; ?>">
-                    <h4 class="panel-title"><?php echo $this->lib->disp_date($row->tgl); ?> = <?php echo $this->lib->format_idr($row->total); ?></h4>
+                    <h4 class="panel-title"><?php echo $this->lib->disp_date($row->tgl); ?> = <?php echo $this->lib->format_idr($row->total); ?><?php if ($row->deposit>0): ?> | Deposit: Rp <?php echo $this->lib->format_idr($row->deposit); ?><?php endif; ?></h4>
                   </a>
                   <div id="collapse<?php echo $id; ?>" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading<?php echo $id; ?>">
                     <div class="panel-body">
@@ -57,6 +57,9 @@
                             <th>Utk Pembayaran</th>
                             <th>Ang. Ke</th>
                             <th>Jumlah</th>
+                            <th>Deposit</th>
+                            <th>Deposit Digunakan</th>
+                            <th>Jumlah Bayar</th>
                             <th>Total UM</th>
                             <th>Hrg Jual</th>
                             <th>Hrg Fitur</th>
@@ -76,7 +79,7 @@
                           $list_rkp_kwt = $this->mod_kwt->list_rkp_kwt($projid, $row->tgl)->result();
                           foreach ($list_rkp_kwt as $rows) {
                             $bg = "";
-                            if ($rows->total <= 0 ||  $rows->btl == 1) {
+                            if (($rows->total <= 0 && $rows->deposit <= 0) || $rows->btl == 1) {
                               $bg = "yellow";
                             }
                           ?>
@@ -84,11 +87,14 @@
                               <td data-order="<?php echo $rows->tgl; ?>"><?php echo $this->lib->disp_date($rows->tgl); ?></td>
                               <td><?php echo $this->lib->no_spr($rows->sprno); ?></td>
                               <td><?php echo $rows->blok; ?> - <?php echo $rows->no; ?></td>
-                              <td><?php echo $this->lib->no_kwt($rows->kwtno); ?></td>
+                              <td><?php echo $rows->total==0 && $rows->deposit>0?'DEP-'.(int)$rows->projid.'-'.str_pad((string)(int)$rows->kwtno,6,'0',STR_PAD_LEFT):$this->lib->no_kwt($rows->kwtno); ?></td>
                               <td><?php echo $rows->nama; ?></td>
                               <td><?php echo $this->lib->tipe_byr_txt($rows->tipe); ?></td>
                               <td><?php echo $rows->ang; ?></td>
                               <td align="right"><?php echo $this->lib->format_idr($rows->total); ?></td>
+                              <td align="right"><?php echo $this->lib->format_idr($rows->deposit); ?></td>
+                              <td align="right"><?php echo $this->lib->format_idr($rows->deposit_digunakan); ?></td>
+                              <td align="right"><?php echo $this->lib->format_idr($rows->jumlah_bayar); ?></td>
                               <td align="right"><?php echo $this->lib->format_idr($rows->umk); ?></td>
                               <td align="right"><?php echo $this->lib->format_idr($rows->hrgstd); ?></td>
                               <td align="right"><?php echo $this->lib->format_idr($rows->hrgtotf); ?></td>
@@ -108,7 +114,7 @@
                             <?php } ?>
                             <?php if ($verify == 1 &&  $bg == "" && $rows->verby == '' && $rows->crdat >= $_SERVER['TGL_VER']) {
                             ?>
-                              <td><a href="#" data-total="<?php echo $this->lib->format_idr($rows->total); ?>" data-projid="<?php echo $rows->projid; ?>" data-kwtno="<?php echo $this->lib->no_kwt($rows->kwtno); ?>" data-toggle="modal" data-target=".bs-example-modal-lg" class="VerDialog btn btn-primary"><i class="fa fa-check"></i> Verifikasi</a></td>
+                              <td><a href="#" data-deposit="<?php echo $this->lib->format_idr($rows->deposit); ?>" data-jumlah-bayar="<?php echo $this->lib->format_idr($rows->jumlah_bayar); ?>" data-total="<?php echo $this->lib->format_idr($rows->total); ?>" data-projid="<?php echo $rows->projid; ?>" data-kwtno="<?php echo $this->lib->no_kwt($rows->kwtno); ?>" data-toggle="modal" data-target=".bs-example-modal-lg" class="VerDialog btn btn-primary"><i class="fa fa-check"></i> Verifikasi</a></td>
                             <?php
                             } else {
                             ?>
@@ -164,6 +170,18 @@
               <p class="form-control-static"><label id="lbl-total"></label></p>
             </div>
           </div>
+          <div class="form-group">
+            <label class="control-label col-sm-3">Deposit (Rp)</label>
+            <div class="col-sm-6"><p class="form-control-static"><strong id="lbl-deposit"></strong></p><small>Deposit dari pembayaran kwitansi ini.</small></div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-3">Jumlah Bayar (Rp)</label>
+            <div class="col-sm-6"><p class="form-control-static"><strong id="lbl-jumlah-bayar"></strong></p></div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-3">Deposit Digunakan (Rp)</label>
+            <div class="col-sm-6"><p class="form-control-static"><strong id="lbl-deposit-digunakan"></strong></p></div>
+          </div>
 
         </div>
 
@@ -197,6 +215,9 @@
 
     $(document).on("click", ".VerDialog", function() {
       $('#lbl-total').text($(this).data('total'));
+      $('#lbl-deposit').text($(this).attr('data-deposit'));
+      $('#lbl-jumlah-bayar').text($(this).attr('data-jumlah-bayar'));
+      $('#lbl-deposit-digunakan').text($(this).closest('tr').children('td').eq(9).text());
       $("#myModalLabel").html("Verifikasi Kwitansi No " + $(this).data('kwtno'));
       $("#txt_projid").val($(this).data('projid'));
       $("#txt_kwtno").val($(this).data('kwtno'));

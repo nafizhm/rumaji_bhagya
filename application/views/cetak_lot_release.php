@@ -2,9 +2,10 @@
 $money=function ($value) { return number_format((float)$value,2,',','.'); };
 $months=array(1=>'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember');
 $releaseDate='';
-$utjTimes=max(1,(int)$row->utj_cicilan);
+$utjTotal=500000;
+$utjTimes=1;
 $umTimes=max(1,(int)$row->um_cicilan);
-$umTotal=max(0,(float)$row->uang_muka_setelah_diskon-(float)$row->utj);
+$umTotal=max(0,(float)$row->uang_muka_setelah_diskon-$utjTotal);
 if ($row->tanggal_release) {
     $time=strtotime($row->tanggal_release);
     $releaseDate=date('j',$time).' '.$months[(int)date('n',$time)].' '.date('Y',$time);
@@ -100,7 +101,7 @@ table.grid { width:100%; border-collapse:collapse; table-layout:fixed; }
 <div class="bottom">
 <div class="standard-layout">
 <table class="standard"><caption>STANDARD</caption><tbody>
-<tr><td>UTJ</td><td><?php echo $money($row->utj/$utjTimes); ?></td><td>× <?php echo $utjTimes; ?></td><td><?php echo $money($row->utj); ?></td></tr>
+<tr><td>UTJ</td><td><?php echo $money($utjTotal/$utjTimes); ?></td><td>× <?php echo $utjTimes; ?></td><td><?php echo $money($utjTotal); ?></td></tr>
 <tr><td>UM</td><td><?php echo $money($umTotal/$umTimes); ?></td><td>× <?php echo $umTimes; ?></td><td><?php echo $money($umTotal); ?></td></tr>
 <tr class="total"><td colspan="3">TOTAL UTJ + UM</td><td><?php echo $money($row->uang_muka_setelah_diskon); ?></td></tr>
 <tr><td>BLL</td><td></td><td></td><td><?php echo $money($row->biaya_lain); ?></td></tr>

@@ -13,7 +13,7 @@
   if(document.activeElement===input)input.setSelectionRange(position,position);
  }
  function error(xhr){return xhr.responseJSON&&xhr.responseJSON.message?xhr.responseJSON.message:'Data gagal diproses. Periksa koneksi lalu coba kembali.';}
- function calculate(){var entered=0;$('#pencairan-categories input').each(function(){var value=amount(this.value);entered+=value;this.setCustomValidity(stage&&value>Number(this.dataset.balance)?'Pencairan tidak boleh melebihi sisa retensi kategori ini.':'');});var retensi=stage?available-entered:entered;var net=stage?entered:amount($('#pencairan-plafon').val())-amount($('#pencairan-kpp').val())-retensi;$('#pencairan-retensi-total').text(rupiah(retensi));$('#pencairan-net').text(rupiah(net)).toggleClass('text-danger',net<0||retensi<0);return net;}
+ function calculate(){var entered=0;$('#pencairan-categories input').each(function(){var value=amount(this.value);if(this.dataset.sbum!=='1')entered+=value;this.setCustomValidity(stage&&value>Number(this.dataset.balance)?'Pencairan tidak boleh melebihi sisa retensi kategori ini.':'');});var retensi=stage?available-entered:entered;var net=stage?entered:amount($('#pencairan-plafon').val())-amount($('#pencairan-kpp').val())-retensi;$('#pencairan-retensi-total').text(rupiah(retensi));$('#pencairan-net').text(rupiah(net)).toggleClass('text-danger',net<0||retensi<0);return net;}
  function load(){
   loading=true;$('#pencairan-loading').show();form.prop('hidden',true);$('#pencairan-error').prop('hidden',true);
   return $.getJSON(base+'/data/'+project+'/'+spr,pengajuan?{pengajuan_id:pengajuan}:{}).done(function(data){
@@ -27,12 +27,15 @@
    data.kategori.forEach(function(category){
     var id='retensi-value-'+category.id,group=$('<div class="col-xs-12 form-group pencairan-category-row">');
     var input=$('<input type="text" inputmode="numeric" autocomplete="off" maxlength="17" class="form-control pencairan-amount" required>').attr({id:id,name:'retensi['+category.id+']'}).val(0);
+    var isSbum=String(category.nama_retensi).trim().toUpperCase()==='SBUM';
+    input.attr('data-sbum',isSbum?'1':'0');
     if(stage){
      input.attr('data-balance',category.sisa);
      var balance=$('<div class="retensi-balance">');$('<label>').attr('for',id).text(category.nama_retensi+' (Rp)').appendTo(balance);$('<span class="text-muted">').text('Sisa retensi: '+rupiah(category.sisa)).appendTo(balance);
      var entry=$('<div class="retensi-entry">');entry.append(input);group.append(balance,entry);
     }else{$('<label>').attr('for',id).text(category.nama_retensi+' (Rp)').appendTo(group);group.append(input);}
     container.append(group);
+    if(isSbum)group.append($('<small class="text-muted">').text('SBUM dicatat tanpa memotong jumlah pencairan.'));
    });
    if(!data.kategori.length)container.append($('<p class="col-xs-12 text-muted">').text('Belum ada kategori retensi. Tambahkan kategori di Master Data bila diperlukan.'));
    var history=$('#pencairan-history').empty();

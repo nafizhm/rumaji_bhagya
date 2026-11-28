@@ -15,7 +15,7 @@ body,td,th {
 <table width="100%" border="0">
   <tr>
     <td width="20%"><img src="<?php echo $this->config->item('assets');?>/img/logo.jpg" alt="" /></td>
-    <td align="center" width="40%"><h1><u>KWITANSI</u></h1></td>
+    <td align="center" width="40%"><h1><u><?php echo isset($deposit_number)?'KWITANSI DEPOSIT':'KWITANSI'; ?></u></h1></td>
     <td width="20%">&nbsp;</td>
   </tr>
 </table>
@@ -23,7 +23,7 @@ body,td,th {
   <tr>
     <td width="19%"><strong>NO</strong></td>
     <td width="1%" align="center"><strong>:</strong></td>
-    <td width="44%"><?php echo $this->lib->no_kwt($row_kwt->kwtno); ?></td>
+    <td width="44%"><?php echo isset($deposit_number)?html_escape($deposit_number):$this->lib->no_kwt($row_kwt->kwtno); ?></td>
     <td width="9%"><strong>Blok / No.</strong></td>
     <td width="1%" align="center"><strong>:</strong></td>
     <td width="26%"><?php echo $row_sprh->blok; ?> / <?php echo $row_sprh->no; ?></td>
@@ -46,6 +46,12 @@ body,td,th {
   </tr>
 </table>
 <br />
+<?php if (!isset($deposit_number) && !empty($row_kwt->deposit_digunakan)): ?>
+<table width="100%" border="0" cellpadding="2" cellspacing="2" style="border-collapse:collapse;">
+  <tr><td width="19%"><strong>Pembayaran baru</strong></td><td width="1%" align="center">:</td><td width="80%">Rp <?php echo $this->lib->format_idr($row_kwt->jumlah_bayar); ?></td></tr>
+  <tr><td width="19%"><strong>Deposit digunakan</strong></td><td width="1%" align="center">:</td><td width="80%">Rp <?php echo $this->lib->format_idr($row_kwt->deposit_digunakan); ?><?php if (!empty($deposit_references)): ?> (<?php echo html_escape(implode(', ',$deposit_references)); ?>)<?php endif; ?></td></tr>
+</table><br />
+<?php endif; ?>
 <table width="100%" border="0" cellpadding="2" cellspacing="2" style='border-collapse: collapse;'>
   <tr>
     <td width="19%"><strong>Telah Terima Dari</strong></td>
@@ -74,7 +80,7 @@ body,td,th {
   <tr>
     <td width="19%"><strong>Untuk Pembayaran</strong></td>
     <td width="1%" align="center"><strong>:</strong></td>
-    <td width="80%"><?php echo $this->lib->tipe_byr_txt($row_kwt->tipe); ?> <?php if($row_kwt->ang <> 0){ echo '( '.$row_kwt->ang.' )'; } ?></td>
+    <td width="80%"><?php if (isset($deposit_number)): ?><?php if (!empty($deposit_only)): ?>Setoran deposit. Dana belum dialokasikan sebagai pembayaran cicilan.<?php else: ?>Deposit kelebihan pembayaran; referensi kwitansi pembayaran <?php echo $this->lib->no_kwt($row_kwt->kwtno); ?><?php endif; ?><?php else: ?><?php echo $this->lib->tipe_byr_txt($row_kwt->tipe); ?> <?php if($row_kwt->ang <> 0){ echo '( '.$row_kwt->ang.' )'; } ?><?php endif; ?></td>
   </tr>
 </table>
 <br />
