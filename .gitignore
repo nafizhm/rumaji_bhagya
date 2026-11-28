@@ -2,6 +2,7 @@
 /application/config/config.php
 /.tmp/
 /assets/uploads/
+/assets/uploads_foto/
 
 # Ignore SQL files in every directory (including uppercase extensions).
 *.[sS][qQ][lL]
