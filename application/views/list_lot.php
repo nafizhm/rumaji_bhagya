@@ -6,13 +6,14 @@
         <?php if ($this->mod_lot->permission('c')): ?><p><a href="<?php echo site_url('lot/create'); ?>" class="btn btn-primary"><i class="fa fa-plus"></i> Tambah Lot</a></p><?php endif; ?>
         <p>Pilih unit melalui Detail. Jumlah unit mengikuti pilihan yang sudah disimpan pada Lot Release ini.</p>
         <div class="table-responsive"><table id="datatable" class="table table-striped table-bordered">
-            <thead><tr><th>Lokasi Proyek</th><th>Kode Lot</th><th>Tanggal Release</th><th>Keterangan</th><th>Jumlah Unit</th><th>Action</th></tr></thead>
+            <thead><tr><th>Lokasi Proyek</th><th>Kode Lot</th><th>Tanggal Release</th><th>Keterangan</th><th>Jumlah Unit</th><th>Biaya Titipan</th><th>Action</th></tr></thead>
             <tbody><?php foreach ($rows as $item): ?><tr>
                 <td><?php echo $item->namproj ? html_escape($item->namproj) : 'Belum dipilih (Edit)'; ?></td>
                 <td><?php echo html_escape($item->kode_lot); ?></td>
                 <td data-order="<?php echo html_escape($item->tanggal_release ?: ''); ?>"><?php echo $item->tanggal_release ? date('d-m-Y', strtotime($item->tanggal_release)) : '-'; ?></td>
                 <td><?php echo nl2br(html_escape($item->keterangan)); ?></td>
                 <td><?php echo (int)$item->jumlah_unit; ?></td>
+                <td class="text-right" data-order="<?php echo (float)$item->biaya_lain; ?>" style="white-space:nowrap">Rp <?php echo number_format((float)$item->biaya_lain,2,',','.'); ?></td>
                 <td><a class="btn btn-info btn-xs" href="<?php echo site_url('lot/detail/'.$item->id); ?>">Detail</a>
                     <?php if ($this->mod_lot->permission('u')): ?><a class="btn btn-primary btn-xs" href="<?php echo site_url('lot/edit/'.$item->id); ?>">Edit</a><?php endif; ?>
                     <?php if ($this->mod_lot->permission('u')): ?><button type="button" class="btn btn-success btn-xs" data-toggle="modal" data-target="#lot-release-modal" data-release="<?php echo html_escape(json_encode($item)); ?>">Release</button><?php endif; ?>
