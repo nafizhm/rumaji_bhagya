@@ -204,10 +204,17 @@
                       </div>
                       
                        <div class="form-group">
-                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Keterangan
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="txt_ket">Keterangan Kwitansi
                         </label>
                         <div class="col-md-6 col-sm-6 col-xs-12">
                           <input name="txt_ket" id="txt_ket" maxlength="100" class="form-control col-md-7 col-xs-12" required >
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="txt_ket_deposit">Keterangan Deposit</label>
+                        <div class="col-md-6 col-sm-6 col-xs-12">
+                          <input name="txt_ket_deposit" id="txt_ket_deposit" maxlength="100" class="form-control col-md-7 col-xs-12">
+                          <small>Dicetak khusus pada kwitansi deposit.</small>
                         </div>
                       </div>
                       

@@ -34,3 +34,4 @@ ERROR - 2026-11-28 07:30:23 --> Severity: Warning --> "continue" targeting switc
 ERROR - 2026-11-28 07:30:23 --> Severity: Warning --> "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? D:\1_laragon\www\rumaji\application\libraries\dompdf\src\Dompdf.php 621
 ERROR - 2026-11-28 07:30:23 --> Severity: Warning --> "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? D:\1_laragon\www\rumaji\application\libraries\dompdf\src\Css\Stylesheet.php 1340
 ERROR - 2026-11-28 07:30:24 --> Severity: Warning --> "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? D:\1_laragon\www\rumaji\application\libraries\dompdf\src\Renderer\Text.php 141
+ERROR - 2026-11-28 09:23:20 --> 404 Page Not Found: Byr/input_byr

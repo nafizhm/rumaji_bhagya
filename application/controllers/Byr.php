@@ -286,6 +286,7 @@ class Byr extends CI_Controller
 		if ($pending) { show_error('Tidak bisa cetak kwitansi deposit, mohon verifikasi dulu kwitansi sebelumnya.',403); return; }
 		$number='DEP-'.(int)$projid.'-'.str_pad((string)(int)$kwtno,6,'0',STR_PAD_LEFT);
 		$dataDepositOnly=$receipt->total==0;
+		$receipt->ket=$receipt->ket_deposit;
 		$receipt->total=$receipt->deposit;
 		$data=array('sprh'=>$this->mod_spr->get_sprh((int)$sprno,(int)$projid)->result(),'kwt'=>array($receipt),'bank'=>$this->mod_bank->get_bankacc2((int)$projid,$receipt->tipe==='UBT'?'KK':'KB')->result(),'deposit_number'=>$number,'deposit_only'=>$dataDepositOnly);
 		$this->load->library('pdf');
@@ -324,6 +325,10 @@ class Byr extends CI_Controller
 		$received=$this->input->post('txt_jumlah_bayar');
 		if (!is_string($received) || !preg_match('/^(?:\d{1,12}|\d{1,3}(?:\.\d{3}){1,3})(?:,\d{1,2})?$/D',$received)) show_error('Jumlah bayar tidak valid.',422);
 		$receivedCents=(int)round((float)str_replace(array('.',','),array('','.'),$received)*100);
+		$paymentNote=$this->input->post('txt_ket');
+		$depositNote=$this->input->post('txt_ket_deposit');
+		if ($depositNote===NULL) $depositNote='';
+		if (!is_string($paymentNote) || !is_string($depositNote) || mb_strlen(trim($paymentNote))>100 || mb_strlen(trim($depositNote))>100) { show_error('Keterangan kwitansi dan deposit maksimal 100 karakter.',422);return; }
 		$this->db->trans_start();
 		$this->db->query('SELECT projid FROM mproj WHERE projid=? FOR UPDATE',array($this->input->post('txt_projid')));
 		$plan=$this->db->query('SELECT p.*,h.status spr_status FROM tsprp p JOIN tsprh h ON h.projid=p.projid AND h.sprno=p.sprno WHERE p.projid=? AND p.sprno=? AND p.tipe=? AND p.ang=? FOR UPDATE',array($this->input->post('txt_projid'),$this->input->post('txt_sprno'),$this->input->post('txt_tipe'),$this->input->post('txt_ang')))->row();
@@ -351,7 +356,8 @@ class Byr extends CI_Controller
 			'tipe' => $this->input->post('txt_tipe'),
 			'ang' => $this->input->post('txt_ang'),
 			'tgl' => $this->lib->conv_date_to_int($this->input->post('txt_tgl')),
-			'ket' => $this->input->post('txt_ket'),
+			'ket' => trim($paymentNote),
+			'ket_deposit' => trim($depositNote),
 			'byr' => $this->input->post('cb_byr'),
 			'total' => $depositOnly?0:$dueCents/100,
 			'jumlah_bayar' => number_format($receivedCents/100,2,'.',''),

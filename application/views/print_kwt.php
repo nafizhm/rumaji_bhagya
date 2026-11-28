@@ -88,7 +88,7 @@ body,td,th {
   <tr>
     <td width="19%"><strong>Keterangan</strong></td>
     <td width="1%" align="center"><strong>:</strong></td>
-    <td width="80%"><?php echo $row_kwt->ket; ?></td>
+    <td width="80%"><?php echo html_escape($row_kwt->ket); ?></td>
   </tr>
 </table>
 <br />
