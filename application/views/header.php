@@ -312,11 +312,6 @@ $optionalMenuAccess=function($mid,$accessTable,$requiredTables,$moduleFile,$moid
                       <li><a href="<?php echo site_url('sls/list_sls'); ?>">List Sales</a></li>
                     </ul>
                   </li>
-                  <li><a><i class="fa fa-group"></i> Salesman <span class="fa fa-chevron-down"></span></a>
-                    <ul class="nav child_menu">
-                      <li><a href="<?php echo site_url('hrgf/input_salesman'); ?>">Salesman</a></li>
-                    </ul>
-                  </li>
                   <li><a><i class="fa fa-credit-card"></i> Bank Account <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo site_url('bank/input_bankacc'); ?>">Tambah Bank Account</a></li>

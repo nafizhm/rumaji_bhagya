@@ -4,7 +4,7 @@
           <div class="">
             <div class="page-title">
               <div class="title_left">
-                <h3>Salesman</h3>
+                <h3>Sales</h3>
               </div>
             </div>
             <div class="clearfix"></div>
@@ -17,12 +17,13 @@
                     <div class="clearfix"></div>
                   </div>
                    <?php $this->lib->disp_msg(); ?>
+                   <?php echo validation_errors('<div class="alert alert-danger">','</div>'); ?>
                   <div class="x_content">
                     <br />
                     <form id="demo-form2" class="form-horizontal form-label-left" method="post" action="<?php echo $form_action; ?>" novalidate>
                       
                       <div class="form-group">
-                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Kode Salesman
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Kode Sales
                         </label>
                         <div class="col-md-6 col-sm-6 col-xs-12">
                           <input name="txt_kode" id="txt_kode" class="form-control col-md-7 col-xs-12" 
@@ -30,7 +31,7 @@
                         </div>
                       </div>
                       <div class="form-group">
-                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Nama Salesman
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12">Nama Sales
                         </label>
                         <div class="col-md-6 col-sm-6 col-xs-12">
                           <input name="txt_nama" id="txt_nama" class="form-control col-md-7 col-xs-12" 
@@ -49,11 +50,11 @@
                       <?php
                       $query = $this->db->query("SELECT kodeslsman,namaslsman FROM msalesman order by kodeslsman");
                       
-                      echo '<table  class="table table-bordered table-striped table-hover">';
+                      echo '<table id="datatable" class="table table-bordered table-striped table-hover">';
                       echo '<thead>';
                       echo '<tr>';
-                      echo '<th>Kode Salesman</th>';
-                      echo '<th>Nama Salesman</th>';
+                      echo '<th>Kode Sales</th>';
+                      echo '<th>Nama Sales</th>';
                       echo '</tr>';
                       echo '</thead>';
                       echo '<tbody>';

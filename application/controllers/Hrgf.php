@@ -85,13 +85,69 @@ class Hrgf extends CI_Controller {
 	}
 
 	
+	function list_sales()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'R');
+		$this->sales_token();
+		$this->load->view('list_sales',array('title'=>'List Sales','sales'=>$this->db->order_by('kodeslsman')->get('msalesman')->result()));
+	}
+
+	private function sales_token()
+	{
+		if (!$this->session->userdata('sales_token')) $this->session->set_userdata('sales_token',bin2hex(random_bytes(32)));
+	}
+
+	private function sales_mutation()
+	{
+		if ($this->input->method() !== 'post') show_error('Metode tidak diizinkan.',405);
+		if (!hash_equals((string)$this->session->userdata('sales_token'),(string)$this->input->post('sales_token')) || !$this->session->userdata('sales_token')) show_error('Sesi formulir tidak valid. Muat ulang halaman.',403);
+	}
+
+	function edit_sales()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+		$this->sales_token();
+		$row=$this->db->get_where('msalesman',array('kodeslsman'=>(string)$this->input->get('kode')))->row();
+		if (!$row) show_404();
+		$this->load->view('edit_sales',array('title'=>'Edit Sales','row'=>$row));
+	}
+
+	function update_sales()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'U');
+		$this->sales_mutation();
+		$code=(string)$this->input->post('kode');
+		$row=$this->db->get_where('msalesman',array('kodeslsman'=>$code))->row();
+		if (!$row) show_404();
+		$this->form_validation->set_rules('nama','Nama Sales','trim|required|max_length[50]');
+		if (!$this->form_validation->run()) { $this->load->view('edit_sales',array('title'=>'Edit Sales','row'=>$row)); return; }
+		$ok=$this->db->where('kodeslsman',$code)->update('msalesman',array('namaslsman'=>trim($this->input->post('nama'))));
+		$this->session->set_flashdata($ok?'ok':'error',$ok?'Sales berhasil diperbarui.':'Sales gagal diperbarui.');
+		redirect('sls/list_sls');
+	}
+
+	function delete_sales()
+	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'D');
+		$this->sales_mutation();
+		$code=(string)$this->input->post('kode');
+		if (!$this->db->get_where('msalesman',array('kodeslsman'=>$code))->row()) show_404();
+		if ($this->db->where('kodeslsman',$code)->count_all_results('tsprh')) {
+			$this->session->set_flashdata('error','Sales sudah digunakan pada SPR dan tidak dapat dihapus.');
+		} else {
+			$ok=$this->db->delete('msalesman',array('kodeslsman'=>$code));
+			$this->session->set_flashdata($ok?'ok':'error',$ok?'Sales berhasil dihapus.':'Sales gagal dihapus.');
+		}
+		redirect('sls/list_sls');
+	}
+
 	function input_salesman()
 	{
 		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
 		
-		$data['form_action']= site_url('hrgf/do_input_salesman');
+		$data['form_action']= site_url('sls/save');
 		// $data['url_back']= site_url('hrgf');
-		$data['title'] = 'Tambah Salesman';
+		$data['title'] = 'Tambah Sales';
 		$data['readonly'] = '';
 		
 		// $data['proj'] = $this->lib->generate_cb_proj($this->input->post('cb_proj'));
@@ -103,14 +159,19 @@ class Hrgf extends CI_Controller {
 
 	function do_input_salesman()
 	{
+		$this->lib->check_auth($this->session->userdata('roleid'),$this->moid,$this->mid,'C');
+		if ($this->input->method() !== 'post') show_error('Metode tidak diizinkan.',405);
+		$this->form_validation->set_rules('txt_kode','Kode Sales','trim|required|max_length[4]|is_unique[msalesman.kodeslsman]');
+		$this->form_validation->set_rules('txt_nama','Nama Sales','trim|required|max_length[50]');
+		if (!$this->form_validation->run()) { $this->input_salesman(); return; }
 		$slsman = array( 
 						'kodeslsman' => $this->input->post('txt_kode'),
 						'namaslsman' => $this->input->post('txt_nama')
 						);
 	   $this->mod_hrgf->input_slsman($slsman);
 	   
-	   $this->session->set_flashdata('ok', 'Tambah harga berhasil');
-	   redirect('hrgf/input_salesman');
+	   $this->session->set_flashdata('ok', 'Sales berhasil ditambahkan');
+	   redirect('sls/list_sls');
 	}
 
 
