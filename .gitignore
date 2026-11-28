@@ -3,6 +3,7 @@
 /.tmp/
 /assets/uploads/
 /assets/uploads_foto/
+/application/uploads/
 
 # Ignore SQL files in every directory (including uppercase extensions).
 *.[sS][qQ][lL]
