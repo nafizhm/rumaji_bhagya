@@ -5,6 +5,7 @@ $releaseDate='';
 $utjTotal=500000;
 $utjTimes=1;
 $umTimes=max(1,(int)$row->um_cicilan);
+$bllTimes=max(1,(int)$row->bll_cicilan);
 $umTotal=max(0,(float)$row->uang_muka_setelah_diskon-$utjTotal);
 if ($row->tanggal_release) {
     $time=strtotime($row->tanggal_release);
@@ -104,7 +105,7 @@ table.grid { width:100%; border-collapse:collapse; table-layout:fixed; }
 <tr><td>UTJ</td><td><?php echo $money($utjTotal/$utjTimes); ?></td><td>× <?php echo $utjTimes; ?></td><td><?php echo $money($utjTotal); ?></td></tr>
 <tr><td>UM</td><td><?php echo $money($umTotal/$umTimes); ?></td><td>× <?php echo $umTimes; ?></td><td><?php echo $money($umTotal); ?></td></tr>
 <tr class="total"><td colspan="3">TOTAL UTJ + UM</td><td><?php echo $money($row->uang_muka_setelah_diskon); ?></td></tr>
-<tr><td>BLL</td><td></td><td></td><td><?php echo $money($row->biaya_lain); ?></td></tr>
+<tr><td>BLL</td><td><?php echo $money($row->biaya_lain/$bllTimes); ?></td><td>× <?php echo $bllTimes; ?></td><td><?php echo $money($row->biaya_lain); ?></td></tr>
 <tr class="total"><td colspan="3">BIAYA UM TOTAL</td><td><?php echo $money($row->uang_muka_setelah_diskon+$row->biaya_lain); ?></td></tr>
 </tbody></table>
 <table class="signatures"><tr><td>Dibuat oleh,</td><td>Disetujui oleh,</td></tr><tr class="space"><td></td><td></td></tr><tr><td><span class="signature-line"></span></td><td><span class="signature-line"></span></td></tr></table>

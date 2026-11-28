@@ -19,11 +19,11 @@ foreach ($releaseFields as $field=>$label): ?>
 </div></div>
 <?php endforeach; ?>
 <hr><h4>STANDARD / Cicilan</h4>
-<div class="form-group"><label class="control-label col-sm-4" for="release-utj">Total UTJ</label><div class="col-sm-8"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" inputmode="decimal" class="form-control release-money" id="release-utj" name="utj" value="0" required></div></div></div>
-<?php foreach (array('utj_cicilan'=>'Cicilan UTJ','um_cicilan'=>'Cicilan UM') as $field=>$label): ?>
+<div class="form-group"><label class="control-label col-sm-4" for="release-utj">Total UTJ</label><div class="col-sm-8"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" inputmode="decimal" class="form-control release-money" id="release-utj" name="utj" value="500.000,00" readonly></div><small>UTJ tetap Rp500.000, dibayar 1 kali.</small></div></div>
+<?php foreach (array('um_cicilan'=>'Cicilan UM','bll_cicilan'=>'Cicilan BLL') as $field=>$label): ?>
 <div class="form-group"><label class="control-label col-sm-4" for="release-<?php echo $field; ?>"><?php echo $label; ?></label><div class="col-sm-8"><div class="input-group"><input type="number" min="1" max="999" step="1" class="form-control" id="release-<?php echo $field; ?>" name="<?php echo $field; ?>" value="1" required><span class="input-group-addon">kali</span></div></div></div>
 <?php endforeach; ?>
-<div class="form-group"><div class="col-sm-8 col-sm-offset-4"><p class="help-block">UM = uang muka setelah diskon dikurangi UTJ. Nominal per cicilan dihitung dari total dibagi jumlah kali. Biaya lain-lain (BLL) ditampilkan sesuai nominal pada form.</p><div id="release-cicilan-preview" class="well well-sm" aria-live="polite"></div></div></div>
+<div class="form-group"><div class="col-sm-8 col-sm-offset-4"><p class="help-block">UM = uang muka setelah diskon dikurangi UTJ Rp500.000. Nominal per cicilan UM dan BLL dihitung dari masing-masing total dibagi jumlah kali.</p><div id="release-cicilan-preview" class="well well-sm" aria-live="polite"></div></div></div>
 </div>
 <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Batal</button><button type="submit" class="btn btn-success" id="lot-release-submit">Simpan Release</button></div>
 <?php echo form_close(); ?>

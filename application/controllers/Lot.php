@@ -108,12 +108,14 @@ class Lot extends CI_Controller
         if ($date !== '' && (!$parsed || $parsed->format('Y-m-d')!==$date || $parsed->format('Y')<'1000')) { $this->release_response('Tanggal release tidak valid.',422); return; }
         if (mb_strlen($type)>100) { $this->release_response('Type maksimal 100 karakter.',422); return; }
         $data=array('tanggal_release'=>$date === '' ? NULL : $date,'release_type'=>$type,'nomor_surat'=>trim($nomorSurat),'siteplan_active'=>$siteplan==='1' ? 1 : 0);
-        foreach (array('utj_cicilan','um_cicilan') as $field) {
+        $data['utj']='500000.00';
+        $data['utj_cicilan']=1;
+        foreach (array('um_cicilan','bll_cicilan') as $field) {
             $value=$this->input->post($field);
-            if (!is_string($value) || !preg_match('/^[1-9]\d{0,2}$/D',$value)) { $this->release_response('Jumlah cicilan UTJ dan UM harus 1 sampai 999 kali.',422); return; }
+            if (!is_string($value) || !preg_match('/^[1-9]\d{0,2}$/D',$value)) { $this->release_response('Jumlah cicilan UM dan BLL harus 1 sampai 999 kali.',422); return; }
             $data[$field]=(int)$value;
         }
-        $amounts=array('harga_jual','uang_muka','diskon_uang_muka','biaya_lain','kpr','perkiraan_angsuran','biaya_hook','biaya_kelebihan_tanah','utj');
+        $amounts=array('harga_jual','uang_muka','diskon_uang_muka','biaya_lain','kpr','perkiraan_angsuran','biaya_hook','biaya_kelebihan_tanah');
         $cents=array();
         foreach ($amounts as $field) {
             $value=$this->input->post($field);
