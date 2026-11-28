@@ -1,5 +1,9 @@
 <?php
 class Mod_spr extends CI_Model {
+    function release_titipan($booking)
+    {
+        return $this->db->query('SELECT l.id,l.biaya_lain FROM mlot_unit u JOIN mlot l ON l.id=u.lot_id AND l.projid=u.projid WHERE u.projid=? AND u.blok=? AND u.no=? AND l.id=? AND l.release_saved_at IS NOT NULL',array($booking->projid,$booking->blok,$booking->no,$booking->lot_release_id))->row();
+    }
 	/**
 	 * Constructor
 	 */

@@ -11,7 +11,7 @@
 <div class="form-group"><label class="control-label col-sm-4" for="release-tanggal">Tanggal Release</label><div class="col-sm-8"><input type="date" class="form-control" id="release-tanggal" name="tanggal_release"></div></div>
 <div class="form-group"><label class="control-label col-sm-4" for="release-type">Type</label><div class="col-sm-8"><input class="form-control" id="release-type" name="release_type" maxlength="100"></div></div>
 <?php
-$releaseFields=array('harga_jual'=>'Harga Jual','uang_muka'=>'Uang Muka','diskon_uang_muka'=>'Diskon Uang Muka','uang_muka_setelah_diskon'=>'Uang Muka Setelah Diskon','biaya_lain'=>'Biaya Lain-lain','kpr'=>'KPR','perkiraan_angsuran'=>'Perkiraan Angsuran','biaya_hook'=>'Biaya Hook','biaya_kelebihan_tanah'=>'Biaya Kelebihan Tanah (per meter)');
+$releaseFields=array('harga_jual'=>'Harga Jual','uang_muka'=>'Uang Muka','diskon_uang_muka'=>'Diskon Uang Muka','uang_muka_setelah_diskon'=>'Uang Muka Setelah Diskon','biaya_lain'=>'Biaya Titipan','kpr'=>'KPR','perkiraan_angsuran'=>'Perkiraan Angsuran','biaya_hook'=>'Biaya Hook','biaya_kelebihan_tanah'=>'Biaya Kelebihan Tanah (per meter)');
 foreach ($releaseFields as $field=>$label): ?>
 <div class="form-group"><label class="control-label col-sm-4" for="release-<?php echo $field; ?>"><?php echo $label; ?></label><div class="col-sm-8"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" inputmode="decimal" autocomplete="off" class="form-control release-money" id="release-<?php echo $field; ?>" name="<?php echo $field; ?>" value="0" required <?php echo $field==='uang_muka_setelah_diskon' ? 'readonly' : ''; ?>></div>
 <?php if ($field==='diskon_uang_muka'): ?><small>Diskon dalam nominal rupiah.</small><?php endif; ?>
@@ -19,7 +19,7 @@ foreach ($releaseFields as $field=>$label): ?>
 </div></div>
 <?php endforeach; ?>
 <hr><h4>STANDARD / Cicilan</h4>
-<div class="form-group"><label class="control-label col-sm-4" for="release-utj">Total UTJ</label><div class="col-sm-8"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" inputmode="decimal" class="form-control release-money" id="release-utj" name="utj" value="500.000,00" readonly></div><small>UTJ tetap Rp500.000, dibayar 1 kali.</small></div></div>
+<div class="form-group"><label class="control-label col-sm-4" for="release-utj">Total UTJ dan UM</label><div class="col-sm-8"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" inputmode="decimal" class="form-control release-money" id="release-utj" name="utj" value="500.000,00" readonly></div><small>UTJ tetap Rp500.000, dibayar 1 kali.</small></div></div>
 <?php foreach (array('um_cicilan'=>'Cicilan UM','bll_cicilan'=>'Cicilan BLL') as $field=>$label): ?>
 <div class="form-group"><label class="control-label col-sm-4" for="release-<?php echo $field; ?>"><?php echo $label; ?></label><div class="col-sm-8"><div class="input-group"><input type="number" min="1" max="999" step="1" class="form-control" id="release-<?php echo $field; ?>" name="<?php echo $field; ?>" value="1" required><span class="input-group-addon">kali</span></div></div></div>
 <?php endforeach; ?>

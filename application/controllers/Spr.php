@@ -388,6 +388,9 @@ function input_spr2()
 		$booking=$this->db->get_where('tbooking',array('deleted_at'=>NULL,'id'=>(int)$this->input->get('booking_id'),'projid'=>$this->uri->segment(3),'blok'=>$this->uri->segment(4),'no'=>$this->uri->segment(5)))->row();
 		if (!$booking || $booking->status==='SPR') { show_error('Booking tidak tersedia untuk dibuat SPR.',409);return; }
 		$data['booking_source']=$booking;
+		$release=$this->mod_spr->release_titipan($booking);
+		if (!$release) { show_error('Release Lot untuk unit booking ini belum tersedia. Lengkapi Release Lot terlebih dahulu.',409);return; }
+		$data['release_biaya_titipan']=(float)$release->biaya_lain;
 	}
 	$this->load->view('frm_spr2',$data);
 }
@@ -398,6 +401,9 @@ function check_spr()
 	if (!$this->require_booking_creation(TRUE)) return;
 	$booking=$this->db->get_where('tbooking',array('deleted_at'=>NULL,'id'=>(int)$this->input->post('booking_id'),'projid'=>$this->input->post('txt_projid'),'blok'=>$this->input->post('txt_blok'),'no'=>$this->input->post('txt_no')))->row();
 	if (!$booking || $booking->status==='SPR') { show_error('Booking tidak tersedia untuk dibuat SPR.',409);return; }
+	$release=$this->mod_spr->release_titipan($booking);
+	if (!$release) { show_error('Release Lot untuk unit booking ini belum tersedia. Lengkapi Release Lot terlebih dahulu.',409);return; }
+	$data['release_biaya_titipan']=(float)$release->biaya_lain;
 	$stok_kav = $this->mod_kav->get_kav_spr($this->input->post('txt_projid'),$this->input->post('txt_blok'),$this->input->post('txt_no'))->result();
 	$data['stok_kav'] = $stok_kav;	
 	
@@ -541,6 +547,12 @@ function do_input_spr()
 		$booking_source=$this->db->get_where('tbooking',array('deleted_at'=>NULL,'id'=>(int)$this->input->post('booking_id'),'projid'=>$this->input->post('txt_projid'),'blok'=>$this->input->post('txt_blok'),'no'=>$this->input->post('txt_no')))->row();
 		if (!$booking_source || $booking_source->status==='SPR') { show_error('Booking tidak tersedia untuk dibuat SPR.',409);return; }
 	}
+	$release=$this->mod_spr->release_titipan($booking_source);
+	if (!$release) { show_error('Release Lot untuk unit booking ini belum tersedia. Lengkapi Release Lot terlebih dahulu.',409);return; }
+	$titipan=(float)$release->biaya_lain;
+	$postedTitipan=$this->input->post('txt_byttp');
+	if (!is_scalar($postedTitipan) || !is_numeric($postedTitipan) || round((float)$postedTitipan*100)!==round($titipan*100)) { show_error('Biaya Titipan Release Lot berubah. Buka ulang form SPR melalui Booking.',409);return; }
+	if ($titipan>0 && (!is_scalar($this->input->post('txt_tot_hrgb')) || !is_numeric($this->input->post('txt_tot_hrgb')) || round((float)$this->input->post('txt_tot_hrgb')*100)!==round($titipan*100))) { show_error('Biaya Titipan tidak sesuai Release Lot. Buka ulang form SPR melalui Booking.',409);return; }
 	//Check apakah stok kavling yang dibuat spr statusnya belum laku ?untuk mencegah double input
 	$query = $this->db->query("SELECT * FROM `mkav` 
 	WHERE projid = '".$this->input->post('txt_projid')."'
@@ -596,7 +608,7 @@ function do_input_spr()
 						'telp2' => $this->input->post('txt_telp2'),
 						'email' => $this->input->post('txt_email'),
 						'hrgstd' => $this->input->post('txt_hrgstd'),
-						'byttp' => $this->input->post('txt_byttp'),
+						'byttp' => $titipan,
 						'tglhrg' => $this->input->post('txt_hrg_tgl'),
 						'distp' => $this->input->post('cb_dis'),
 						'dis' => $dis,
@@ -690,6 +702,10 @@ function do_input_spr()
 		$locked_booking=$this->db->query('SELECT status FROM tbooking WHERE id=? AND deleted_at IS NULL FOR UPDATE',array($booking_source->id))->row();
 		if (!$locked_booking || $locked_booking->status==='SPR') {
 			$this->db->trans_rollback();show_error('Booking sudah dibuat SPR. Muat ulang daftar booking.',409);return;
+		}
+		$locked_release=$this->db->query('SELECT biaya_lain FROM mlot WHERE id=? AND release_saved_at IS NOT NULL FOR UPDATE',array($release->id))->row();
+		if (!$locked_release || round((float)$locked_release->biaya_lain*100)!==round($titipan*100)) {
+			$this->db->trans_rollback();show_error('Biaya Titipan Release Lot berubah. Buka ulang form SPR melalui Booking.',409);return;
 		}
 	}
 	if($this->input->post('txt_hrgtotf') != '')
@@ -794,7 +810,7 @@ function do_input_spr()
 	$sprb = array( 
 						'sprno' => $sprno,
 						'projid' => $this->input->post('txt_projid'),
-						'hrgtotb' => $this->input->post('txt_tot_hrgb'),
+						'hrgtotb' => $titipan,
 						'disbtp' => $this->input->post('cb_disb'),
 						'disb' => $disb,
 						'hrgtotalb' => $this->input->post('txt_totall_hrgb'),

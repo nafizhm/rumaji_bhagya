@@ -1,7 +1,7 @@
 <?php $assets=$this->config->item('assets'); if (!$publicView) { $this->load->view('header'); } else { ?>
 <!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Siteplan Unit Ready</title><link rel="stylesheet" href="<?php echo $assets; ?>/gentelella-master/vendors/bootstrap/dist/css/bootstrap.min.css"><link rel="stylesheet" href="<?php echo $assets; ?>/gentelella-master/vendors/font-awesome/css/font-awesome.min.css"><style>body{background:#f1f5f2;color:#263d33;padding:20px}.x_panel{background:#fff;border:1px solid #dce5de;border-radius:12px;padding:20px}.btn{margin-bottom:5px}</style></head><body>
 <?php } ?>
-<link rel="stylesheet" href="<?php echo $assets; ?>/css/siteplan.css?v=2">
+<link rel="stylesheet" href="<?php echo $assets; ?>/css/siteplan.css?v=3">
 <div class="right_col" role="main" id="siteplan-page" data-ready-only="<?php echo $publicView ? '1' : '0'; ?>">
  <h3>Siteplan</h3>
  <div class="x_panel">
@@ -20,6 +20,7 @@
    <?php if (!$counts['tersedia']): ?><div class="alert alert-info">Belum ada unit yang bisa dijual untuk pilihan Lot Release ini.</div><?php endif; ?>
    <?php if ($publicView): ?><p><a href="<?php echo site_url('booking'); ?>">Kembali ke Booking</a></p><?php endif; ?>
    <?php if ($template): ?>
+   <?php if (!$publicView): ?><button type="button" class="btn btn-primary" id="siteplan-pdf"><i class="fa fa-file-pdf-o"></i> Cetak PDF</button><div id="siteplan-pdf-error" class="text-danger" role="alert" hidden></div><?php endif; ?>
    <div class="siteplan-legend"><?php foreach ($legend as $state=>$item): ?><span><i style="background:<?php echo $item[1]; ?>"></i><?php echo html_escape($item[0]); ?> <strong><?php echo $counts[$state]; ?></strong></span><?php endforeach; ?></div>
    <div class="siteplan-map-toolbar"><span id="siteplan-result" role="status">Klik unit untuk melihat detail. Geser peta atau gunakan tombol zoom.</span><div><button type="button" class="btn btn-default" id="siteplan-minus" aria-label="Perkecil"><i class="fa fa-minus"></i></button><button type="button" class="btn btn-default" id="siteplan-plus" aria-label="Perbesar"><i class="fa fa-plus"></i></button><button type="button" class="btn btn-default" id="siteplan-reset">Reset</button></div></div>
    <?php endif; ?>
@@ -42,5 +43,5 @@
 <?php if (!$publicView) { $this->load->view('footer'); } else { ?>
 <script src="<?php echo $assets; ?>/gentelella-master/vendors/jquery/dist/jquery.min.js"></script><script src="<?php echo $assets; ?>/gentelella-master/vendors/bootstrap/dist/js/bootstrap.min.js"></script>
 <?php } ?>
-<script src="<?php echo $assets; ?>/js/siteplan.js?v=2"></script>
+<script src="<?php echo $assets; ?>/js/siteplan.js?v=3"></script>
 <?php if ($publicView): ?></body></html><?php endif; ?>

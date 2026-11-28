@@ -88,7 +88,7 @@
                           	 ?>
                             <input type="hidden" id="global_harga_unit" name="global_harga_unit" value="<?php echo $global_harga_unit; ?>" /> 
                             <input type="hidden" name="txt_hrgstd" value="<?php echo $this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'H'); ?>" />
-                            <input type="hidden" name="txt_byttp" value="<?php echo $this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B'); ?>" /></td>
+                            <input type="hidden" name="txt_byttp" value="<?php echo $release_biaya_titipan; ?>" /></td>
                           </tr>
                           <tr>
                             <td><strong>Lot</strong></td>
@@ -163,7 +163,7 @@
    <td><strong>Biaya Biaya Titipan</strong></td>
    <td width="27" align="center"><strong>:</strong></td>
    <td><?php 
-   $global_biaya_titipan = $this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B');
+   $global_biaya_titipan = $release_biaya_titipan;
    
    echo $this->lib->format_idr($global_biaya_titipan); ?></td>
    <input type="hidden" id="global_biaya_titipan" name="global_biaya_titipan" value="<?php echo $global_biaya_titipan; ?>" /> 
@@ -220,7 +220,7 @@
 						}
 						?>
                           <?php
-						if(!empty($this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B')))
+						if(!empty($release_biaya_titipan))
 						{
 						?>
                         <li role="presentation" class=""><a href="#tab_content4" role="tab" id="profile-tab2" data-toggle="tab" aria-expanded="false">Biaya Biaya Titipan</a>
@@ -485,7 +485,7 @@
 							}
 						?>
                         </div>
-                        <?php if (!empty($this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B')))
+                        <?php if (!empty($release_biaya_titipan))
 						{
 						?>
                          <div role="tabpanel" class="tab-pane fade" id="tab_content4" aria-labelledby="profile-tab">
@@ -951,7 +951,7 @@ $( "#cb_byrf" ).change(function() {
 }
 ?>
  <?php
-if (!empty($this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B')))
+if (!empty($release_biaya_titipan))
 {
 ?>
 <script type="text/javascript">

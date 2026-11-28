@@ -106,7 +106,7 @@ foreach($stok_kav as $row_stok);
                         </li>
                         <?php } ?>
                          <?php
-						  $tot_hrgb = $this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B');
+						  $tot_hrgb = $release_biaya_titipan;
 						if(!empty($tot_hrgb))
 						{
 						?>
@@ -233,7 +233,7 @@ Harga & Rencana Pembayaran</legend>
     <td><?php echo $this->lib->format_idr($ppn); ?></td>
     <td><strong>Biaya Biaya Titipan</strong></td>
     <td align="center"><strong>:</strong></td>
-    <td><?php echo $this->lib->format_idr($this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B'));?></td>
+    <td><?php echo $this->lib->format_idr($release_biaya_titipan);?></td>
     </tr>
   <tr>
   <td><strong>Harga Total</strong> <strong>+ PPN</strong></td>
@@ -267,12 +267,12 @@ Harga & Rencana Pembayaran</legend>
 <?php
 if($cclns == 0)
 {
-//$cicilan = (($dp - $bkf) + $this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B')) / $dp_ccl;
+//$cicilan = (($dp - $bkf) + $release_biaya_titipan) / $dp_ccl;
 $cicilan = ($dp - $bkf) / $dp_ccl;
 }
 else
 {
-	//$cicilan = ((($dp - $bkf) + $this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B')) - $cclns) / ($dp_ccl-1);
+	//$cicilan = ((($dp - $bkf) + $release_biaya_titipan) - $cclns) / ($dp_ccl-1);
 	$cicilan = (($dp - $bkf) - $cclns) / ($dp_ccl-1);
 }
 $tot_cicil = 0;
@@ -343,7 +343,7 @@ else
     <td width="129" align="center"><strong>Jatuh Tempo</strong></td>
   </tr>
   <tr>
-    <td width="238" align="center"><?php // echo $this->lib->format_idr(($dp - $bkf) + $this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B')); 
+    <td width="238" align="center"><?php // echo $this->lib->format_idr(($dp - $bkf) + $release_biaya_titipan); 
 	echo $this->lib->format_idr($dp - $bkf);?></td>
     <td width="129" align="center"><?php echo $tgl_jtdp; ?></td>
   </tr>
@@ -556,7 +556,7 @@ Biaya Biaya Titipan & Rencana Pembayaran</legend>
 	}
 	elseif($cb_disb == 'P')
 	{
-		$dis_valb = ($disb / 100) * $this->lib->get_harga($row_stok->projid,$row_stok->lot,$row_stok->tipe,'B');
+		$dis_valb = ($disb / 100) * $release_biaya_titipan;
 		echo  $this->lib->format_idr($dis_valb);	
 		echo '&nbsp;('.$disb.'%)';
 	}

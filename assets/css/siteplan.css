@@ -21,6 +21,7 @@
 #siteplan-canvas>svg.is-dragging{cursor:grabbing}
 .siteplan-unit{cursor:pointer;transition:opacity .15s}
 .siteplan-unit text{pointer-events:none}
+#siteplan-page[data-ready-only="0"] .siteplan-unit:not([data-state="tersedia"]) text{fill:#fff!important}
 .siteplan-unit:hover>polygon,.siteplan-unit:hover>path,.siteplan-unit:focus>polygon,.siteplan-unit:focus>path{stroke:#1969b5!important;stroke-width:75!important}
 .siteplan-unit.is-dimmed{opacity:.14;pointer-events:none}
 .siteplan-unit.is-dimmed:focus{outline:none}

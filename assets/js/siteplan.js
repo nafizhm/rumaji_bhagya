@@ -15,4 +15,36 @@
  $(svg).on('click','.siteplan-unit',function(){if(!moved&&!this.classList.contains('is-dimmed'))detail(this.dataset.code);}).on('keydown','.siteplan-unit',function(event){if((event.key==='Enter'||event.key===' ')&&!this.classList.contains('is-dimmed')){event.preventDefault();detail(this.dataset.code);}});
  function filter(){var query=$('#siteplan-search').val().toUpperCase().replace(/[\s/\-]/g,''),state=document.getElementById('siteplan-page').dataset.readyOnly==='1'?'tersedia':$('#siteplan-status').val(),count=0;$('.siteplan-unit',svg).each(function(){var match=(!query||this.dataset.code.indexOf(query)!==-1)&&(!state||this.dataset.state===state);$(this).toggleClass('is-dimmed',!match).attr('tabindex',match?'0':'-1');if(match)count++;});$('#siteplan-result').text(count+' unit sesuai filter. Klik unit untuk melihat detail.');}
  $('#siteplan-search').on('input',filter);$('#siteplan-status').on('change',filter);filter();
+ $('#siteplan-pdf').on('click',function(){
+  var button=$(this),errorBox=$('#siteplan-pdf-error'),url;
+  button.prop('disabled',true).text('Membuat PDF...');errorBox.prop('hidden',true);
+  function fail(){errorBox.text('PDF gagal dibuat. Silakan coba kembali.').prop('hidden',false);}
+  function done(){if(url)URL.revokeObjectURL(url);button.prop('disabled',false).html('<i class="fa fa-file-pdf-o"></i> Cetak PDF');}
+  try {
+   var copy=svg.cloneNode(true),ratio=initial[2]/initial[3],height=3600,width=Math.round(height*ratio);
+   copy.setAttribute('viewBox',initial.join(' '));copy.setAttribute('width',width);copy.setAttribute('height',height);
+   copy.querySelectorAll('.siteplan-unit').forEach(function(unit){
+    unit.classList.remove('is-dimmed');
+    if(unit.dataset.state!=='tersedia')unit.querySelectorAll('text').forEach(function(text){text.style.setProperty('fill','#fff','important');});
+   });
+   url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)],{type:'image/svg+xml;charset=utf-8'}));
+   var picture=new Image();
+   picture.onload=function(){
+    try {
+     var canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+     var context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,width,height);context.drawImage(picture,0,0,width,height);
+     var project=$('#siteplan-project option:selected').text(),lot=$('#siteplan-lot option:selected').text();
+     var legend=[];$('.siteplan-legend span').each(function(){legend.push($(this).text().trim().replace(/\s+/g,' '));});
+     var documentDefinition={pageSize:'A4',pageOrientation:'landscape',pageMargins:[24,20,24,20],content:[
+      {text:'SITEPLAN - '+project,fontSize:16,bold:true,margin:[0,0,0,5]},
+      {text:lot+' | '+new Date().toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})+' WIB',fontSize:9,margin:[0,0,0,5]},
+      {text:legend.join('   |   '),fontSize:8,margin:[0,0,0,8]},
+      {image:canvas.toDataURL('image/jpeg',0.95),fit:[790,455],alignment:'center'}
+     ]};
+     pdfMake.createPdf(documentDefinition).download('siteplan-'+$('#siteplan-project').val()+'.pdf');
+    }catch(error){fail();}finally{done();}
+   };
+   picture.onerror=function(){fail();done();};picture.src=url;
+  }catch(error){fail();done();}
+ });
 }(jQuery));
